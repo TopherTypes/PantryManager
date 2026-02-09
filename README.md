@@ -42,9 +42,11 @@ PantryManager is a GitHub Pages-hosted HTML web app for managing kitchen invento
 │   ├── product-requirements/
 │   │   ├── mvp-scope.md            # MVP scope
 │   │   └── clarifications.md       # Finalized requirement decisions
-│   └── decisions/
-│       ├── adr-0001-frontend-foundation.md
-│       └── adr-0002-mvp-data-sync-and-domain-policies.md
+│   ├── decisions/
+│   │   ├── adr-0001-frontend-foundation.md
+│   │   └── adr-0002-mvp-data-sync-and-domain-policies.md
+│   └── quality/
+│       └── test-strategy.md         # MVP QA gates, acceptance checks, and coverage matrix
 └── .github/
     └── workflows/
         └── pages.yml               # GitHub Pages deployment workflow
@@ -86,6 +88,13 @@ PantryManager uses a **barcode product lookup adapter** contract with Open Food 
   - Retry policy is fixed at 3 attempts for transient lookup failures.
   - Offline behavior is local-only lookup with user warning.
   - Existing data privacy/logging constraints remain in effect for outbound lookups.
+
+
+## Quality and verification
+
+Quality expectations, feature-level acceptance criteria, and verification coverage are defined in `docs/quality/test-strategy.md`.
+
+This file captures confirmed MVP quality gates, feature-level acceptance criteria, and documentation verification checks.
 
 ## Contributing
 

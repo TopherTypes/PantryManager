@@ -31,7 +31,12 @@ Define an initial architecture direction for PantryManager as a static web app h
 
 ## Ambiguities / decisions pending
 
-- **Storage choice**: localStorage vs IndexedDB.
-- **Sync strategy**: no sync vs optional cloud export/import.
-- **Barcode provider abstraction**: single provider vs pluggable providers.
-- **Nutrition schema depth**: macros only vs full nutrient panel.
+Resolved in ADR 0002:
+
+- **Sync strategy**: single-user with Google Drive-backed sync/import-export.
+- **Barcode provider abstraction**: adapter-based pluggable providers with local-first lookup.
+- **Nutrition schema depth**: MVP minimum fields are calories, protein, carbs, sugars, fats.
+
+Still pending:
+
+- **Storage choice**: localStorage vs IndexedDB (to be selected during implementation design).

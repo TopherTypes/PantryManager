@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "version": "0.1.0",
+    "description": "Example shape for future app seed/import data"
+  },
+  "inventory": [
+    {
+      "id": "item_olive_oil_001",
+      "name": "Olive Oil",
+      "quantity": 750,
+      "unit": "ml",
+      "price": 8.5,
+      "expiryDate": "2026-06-30",
+      "barcode": "0000000000000",
+      "nutrition": {
+        "caloriesPer100": 884,
+        "fatPer100": 100,
+        "proteinPer100": 0,
+        "carbsPer100": 0
+      }
+    }
+  ],
+  "recipes": [
+    {
+      "id": "recipe_pasta_001",
+      "name": "Simple Tomato Pasta",
+      "servings": 2,
+      "ingredients": [
+        {
+          "inventoryItemId": "item_olive_oil_001",
+          "quantity": 20,
+          "unit": "ml"
+        }
+      ]
+    }
+  ],
+  "mealPlan": [],
+  "shoppingList": []
+}

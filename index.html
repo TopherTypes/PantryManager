@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PantryManager - Wireframe</title>
+    <meta
+      name="description"
+      content="Wireframe layout for PantryManager, a kitchen inventory and meal planning web app."
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <!--
+      Top-level app container.
+      This wireframe intentionally keeps semantic landmarks clear to support
+      incremental conversion into production-grade components.
+    -->
+    <div class="app-shell">
+      <header class="app-header">
+        <h1>PantryManager</h1>
+        <p class="tagline">Kitchen inventory, recipes, meal plans, and smart shopping support.</p>
+      </header>
+
+      <nav class="app-nav" aria-label="Primary">
+        <button type="button" data-target="inventory">Inventory</button>
+        <button type="button" data-target="recipes">Recipes</button>
+        <button type="button" data-target="recommendations">Recommendations</button>
+        <button type="button" data-target="meal-plan">Meal Plan</button>
+        <button type="button" data-target="shopping-list">Shopping List</button>
+        <button type="button" data-target="barcode">Barcode</button>
+      </nav>
+
+      <main class="app-main">
+        <!-- Inventory panel wireframe -->
+        <section id="inventory" class="panel is-active" aria-labelledby="inventory-heading">
+          <h2 id="inventory-heading">Inventory</h2>
+          <p>Track quantities, prices, expiry dates, and nutritional details.</p>
+          <div class="card-grid">
+            <article class="card placeholder">
+              <h3>Product List</h3>
+              <p>Placeholder for searchable product table.</p>
+            </article>
+            <article class="card placeholder">
+              <h3>Add / Edit Product</h3>
+              <p>Placeholder for product form (name, quantity, expiry, nutrition, barcode).</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Recipes panel wireframe -->
+        <section id="recipes" class="panel" aria-labelledby="recipes-heading">
+          <h2 id="recipes-heading">Recipes</h2>
+          <p>Store recipes and map ingredient requirements per serving.</p>
+          <div class="card-grid">
+            <article class="card placeholder">
+              <h3>Recipe Library</h3>
+              <p>Placeholder for recipe cards and filters.</p>
+            </article>
+            <article class="card placeholder">
+              <h3>Recipe Editor</h3>
+              <p>Placeholder for recipe details, ingredients, and instructions.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Recommendations panel wireframe -->
+        <section id="recommendations" class="panel" aria-labelledby="recommendations-heading">
+          <h2 id="recommendations-heading">Recommendations</h2>
+          <p>Suggest recipes based on current pantry availability and configured priorities.</p>
+          <article class="card placeholder">
+            <h3>Suggested Recipes</h3>
+            <p>Placeholder for recommendation logic output.</p>
+          </article>
+        </section>
+
+        <!-- Meal planning panel wireframe -->
+        <section id="meal-plan" class="panel" aria-labelledby="meal-plan-heading">
+          <h2 id="meal-plan-heading">Weekly Meal Plan</h2>
+          <p>Organize meals by day and time to plan inventory usage.</p>
+          <article class="card placeholder">
+            <h3>Planner Board</h3>
+            <p>Placeholder for drag-and-drop meal plan calendar.</p>
+          </article>
+        </section>
+
+        <!-- Shopping list panel wireframe -->
+        <section id="shopping-list" class="panel" aria-labelledby="shopping-list-heading">
+          <h2 id="shopping-list-heading">Shopping List</h2>
+          <p>Generate ingredient gaps for the selected weekly plan.</p>
+          <article class="card placeholder">
+            <h3>Generated List</h3>
+            <p>Placeholder for grouped shopping list items and estimated spend.</p>
+          </article>
+        </section>
+
+        <!-- Barcode panel wireframe -->
+        <section id="barcode" class="panel" aria-labelledby="barcode-heading">
+          <h2 id="barcode-heading">Barcode Tools</h2>
+          <p>Scan known products quickly and query public data for unknown barcodes.</p>
+          <div class="card-grid">
+            <article class="card placeholder">
+              <h3>Scanner</h3>
+              <p>Placeholder for camera/scan workflow.</p>
+            </article>
+            <article class="card placeholder">
+              <h3>External Lookup</h3>
+              <p>Placeholder for API status, import preview, and mapping controls.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <small>
+          Wireframe build. See docs for open ambiguities and architecture decisions.
+        </small>
+      </footer>
+    </div>
+
+    <script src="assets/js/app.js" defer></script>
+  </body>
+</html>

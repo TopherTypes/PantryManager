@@ -1,0 +1,98 @@
+/*
+  Base visual system for the PantryManager wireframe.
+  The goal is clarity/readability over final branding.
+*/
+:root {
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-border: #d0d7de;
+  --color-text: #1f2933;
+  --color-muted: #52606d;
+  --color-primary: #1d4ed8;
+  --radius-md: 10px;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.5;
+}
+
+.app-shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+
+.app-header {
+  margin-bottom: var(--space-lg);
+}
+
+.app-header h1 {
+  margin: 0;
+}
+
+.tagline {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-muted);
+}
+
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.app-nav button {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 999px;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+}
+
+.app-nav button.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.panel {
+  display: none;
+  margin-bottom: var(--space-lg);
+}
+
+.panel.is-active {
+  display: block;
+}
+
+.card-grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.placeholder {
+  border-style: dashed;
+}
+
+.app-footer {
+  color: var(--color-muted);
+}

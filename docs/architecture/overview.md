@@ -34,13 +34,60 @@ Define an initial architecture direction for PantryManager as a static web app h
 Finalized decisions from ADR 0002 and clarifications are in effect:
 
 - **Sync strategy**: single-user with Google Drive-backed sync/import-export.
-- **Barcode provider abstraction**: adapter-based pluggable providers with local-first lookup.
+- **Barcode provider abstraction**: adapter boundary retained with Open Food Facts as the MVP provider and local-first lookup.
 - **Nutrition schema depth**: MVP minimum fields are calories, protein, carbs, sugars, fats, and nutrition is mandatory for inventory records.
 - **Unit conversion policy**: canonical unit families with conversion support; unknown units require custom-unit creation before use.
 - **Retention policy**: 30-day archive window for most data and 12-month pricing retention.
 - **Barcode validation policy**: barcode verification is not required for accepting barcode values.
 
 Canonical entity contracts, field naming, and relationships are specified in `docs/architecture/data-model.md`.
+
+## Barcode product lookup contract
+
+### Adapter boundary
+
+- Domain logic calls a provider-agnostic `BarcodeLookupAdapter` interface for unknown barcodes.
+- Open Food Facts is the configured MVP provider implementation behind that adapter.
+- Barcode scan input is supplied by hardware; no dedicated barcode reader API integration is required.
+- Provider adapters normalize provider-specific payloads and errors into a canonical response model.
+
+### Canonical mapped response
+
+Adapters map provider responses into these MVP fields before UI presentation:
+
+- `barcode`
+- `name`
+- `brand` (optional)
+- `quantity` + `unit` (optional when not parseable)
+- `category` (optional)
+- `nutrition.caloriesPer100`
+- `nutrition.proteinPer100`
+- `nutrition.carbsPer100`
+- `nutrition.sugarsPer100`
+- `nutrition.fatsPer100`
+
+### User confirmation and save rules
+
+- Provider lookup results are always treated as a draft until user confirmation.
+- Users can edit mapped values before save.
+- Save is blocked if mandatory MVP nutrition fields remain missing after mapping.
+- Barcode value acceptance does not require successful external verification.
+
+### Failure and resilience states
+
+- **Timeout/network error**: retry up to 3 times; if still failing, route to manual entry with explanatory message.
+- **Rate-limited/quota exceeded**: route directly to manual entry with explanatory message.
+- **Provider not found**: show “No provider match” and route to manual entry.
+- **Malformed payload**: mark provider response invalid, log client-side diagnostic event, and route to manual entry.
+- **Offline state**: warn the user, skip provider call, and use local-match/manual-entry flow only.
+
+### Confirmed integration decisions
+
+- Open Food Facts is the approved barcode lookup API for MVP.
+- Retry policy is fixed at 3 attempts for transient errors.
+- Offline flow must warn users and run local-only barcode matching.
+- Dedicated barcode reader API integration is out of scope because scanning is hardware-handled.
+- Data privacy constraints for outbound barcode requests and client-side logs remain applicable.
 
 Implementation design decision still pending:
 

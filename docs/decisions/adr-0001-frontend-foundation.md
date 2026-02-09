@@ -1,7 +1,12 @@
 # ADR 0001: Frontend Foundation for PantryManager
 
-- **Status**: Accepted (initial scaffold)
+- **Status**: Accepted
 - **Date**: 2026-02-09
+- **Owner**: Unassigned
+- **Deciders**: Project maintainer (approved in chat with Codex)
+- **Supersedes**: None
+- **Superseded by**: None
+- **Review cadence**: None (event-driven)
 
 ## Context
 
@@ -14,6 +19,11 @@ Start with a static frontend stack:
 - Semantic HTML
 - Vanilla CSS
 - Vanilla JavaScript modules (incrementally)
+
+## Alternatives considered
+
+- **Framework-first SPA stack (for example React/Vue + build tooling)**: Rejected for initial stages due to increased setup and maintenance overhead before core workflows are validated.
+- **TypeScript from day one**: Deferred to keep initial iteration speed high, while preserving a migration path if type-safety needs increase.
 
 ## Consequences
 

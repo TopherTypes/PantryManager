@@ -2,6 +2,11 @@
 
 - **Status**: Accepted
 - **Date**: 2026-02-09
+- **Owner**: Unassigned
+- **Deciders**: Project maintainer (approved in chat with Codex)
+- **Supersedes**: None
+- **Superseded by**: None
+- **Review cadence**: None (event-driven)
 
 ## Context
 
@@ -41,6 +46,12 @@ MVP requirement clarifications finalized decisions on user scope, sync behavior,
 - Retain archived non-pricing data for 30 days, then purge.
 - Retain pricing history for 12 months.
 
+## Alternatives considered
+
+- **Multi-user-first scope for MVP**: Rejected to avoid auth/collaboration complexity before validating core single-user pantry workflows.
+- **Cloud-first authoritative backend for all data operations**: Rejected for MVP to preserve low-infrastructure operation and simpler deployment constraints.
+- **No external barcode integration in MVP**: Rejected because barcode-assisted entry is core to reducing user friction.
+
 ## Consequences
 
 ### Positive
@@ -52,6 +63,13 @@ MVP requirement clarifications finalized decisions on user scope, sync behavior,
 - Google Drive sync introduces integration complexity and authorization handling in a static app architecture.
 - Broad unit conversion support increases validation and testing complexity.
 - External barcode providers may differ in data quality, rate limits, and licensing constraints.
+
+## Revisit triggers
+
+- Google Drive API policy changes or quota limitations materially affect reliability.
+- Barcode provider terms, costs, or uptime no longer meet MVP constraints.
+- Conversion error rates or support burden indicate simplification is required.
+- Data-retention obligations change due to legal or product policy updates.
 
 ## Follow-up
 

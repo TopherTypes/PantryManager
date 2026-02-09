@@ -8,7 +8,7 @@ PantryManager is a GitHub Pages-hosted HTML web app for managing kitchen invento
 
 ## Goals
 
-- Track food products in the kitchen, including quantities, prices, expiry dates, and nutritional information.
+- Track food products in the kitchen, including quantities, mandatory prices, expiry dates, and mandatory nutritional information.
 - Maintain recipes with ingredient requirements.
 - Recommend recipes based on currently available ingredients.
 - Organize weekly meal plans and generate shopping lists to fill ingredient gaps.
@@ -37,30 +37,26 @@ PantryManager is a GitHub Pages-hosted HTML web app for managing kitchen invento
 │   └── seed.example.json           # Example seed data shape
 ├── docs/
 │   ├── architecture/
-│   │   └── overview.md             # System architecture draft
+│   │   ├── overview.md             # System architecture draft
+│   │   └── data-model.md           # Canonical MVP entity and field contract
 │   ├── product-requirements/
-│   │   └── mvp-scope.md            # MVP scope and open questions
+│   │   ├── mvp-scope.md            # MVP scope
+│   │   └── clarifications.md       # Finalized requirement decisions
 │   └── decisions/
-│       └── adr-0001-frontend-foundation.md
+│       ├── adr-0001-frontend-foundation.md
+│       └── adr-0002-mvp-data-sync-and-domain-policies.md
 └── .github/
     └── workflows/
         └── pages.yml               # GitHub Pages deployment workflow
 ```
 
-## Open ambiguities to resolve
+## Requirements and model decision status
 
-The following areas are intentionally left open and are documented for follow-up:
+Previously open MVP ambiguities are now finalized in `docs/product-requirements/clarifications.md` and ADR 0002.
 
-1. Authentication and multi-user support requirements.
-2. Preferred barcode APIs and rate limits.
-3. Nutritional information schema depth (basic macros vs. full nutrient profile).
-4. Unit normalization strategy (g/ml/units and conversion behavior).
-5. Rules for expiry-date handling (timezone, partial packages, confidence level).
-6. Recommendation algorithm priorities (cost, nutrition goals, expiry-first, etc.).
-7. Meal plan model details (servings per meal, leftovers, constraints).
-8. Offline-first behavior and sync conflict handling.
+Canonical field naming, validation constraints, and entity relationships are defined in `docs/architecture/data-model.md`.
 
-See `docs/product-requirements/mvp-scope.md` for details.
+Remaining implementation detail decisions should be tracked as ADRs if they materially affect architecture.
 
 ## Contributing
 
@@ -78,7 +74,7 @@ Then visit `http://localhost:8080`.
 
 ## Next implementation milestones
 
-1. Define canonical domain models and ID strategy.
+1. Implement canonical domain models and ID strategy from `docs/architecture/data-model.md`.
 2. Build inventory CRUD flows.
 3. Build recipe CRUD + matching engine.
 4. Build weekly planner + shopping list generation.

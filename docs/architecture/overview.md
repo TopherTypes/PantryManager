@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define an initial architecture direction for PantryManager as a static web app hosted on GitHub Pages.
+Define an initial architecture direction for PantryManager as a static web app hosted on GitHub Pages, aligned with accepted MVP scope clarifications and the canonical data model.
 
 ## Proposed high-level components
 
@@ -26,17 +26,22 @@ Define an initial architecture direction for PantryManager as a static web app h
 
 - Offline usability for core local operations.
 - Explainable recommendation outputs.
-- Robust input validation for units and dates.
+- Robust input validation for units and dates, including custom-unit conversion linkage where applicable.
 - Fast page load on static hosting.
 
-## Ambiguities / decisions pending
+## Decision alignment status
 
-Resolved in ADR 0002:
+Finalized decisions from ADR 0002 and clarifications are in effect:
 
 - **Sync strategy**: single-user with Google Drive-backed sync/import-export.
 - **Barcode provider abstraction**: adapter-based pluggable providers with local-first lookup.
-- **Nutrition schema depth**: MVP minimum fields are calories, protein, carbs, sugars, fats.
+- **Nutrition schema depth**: MVP minimum fields are calories, protein, carbs, sugars, fats, and nutrition is mandatory for inventory records.
+- **Unit conversion policy**: canonical unit families with conversion support; unknown units require custom-unit creation before use.
+- **Retention policy**: 30-day archive window for most data and 12-month pricing retention.
+- **Barcode validation policy**: barcode verification is not required for accepting barcode values.
 
-Still pending:
+Canonical entity contracts, field naming, and relationships are specified in `docs/architecture/data-model.md`.
 
-- **Storage choice**: localStorage vs IndexedDB (to be selected during implementation design).
+Implementation design decision still pending:
+
+- **Storage technology selection**: localStorage vs IndexedDB.

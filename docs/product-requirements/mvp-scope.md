@@ -1,11 +1,12 @@
-# MVP Scope and Open Questions
+# MVP Scope
 
 ## MVP capabilities
 
 ### 1) Inventory management
 - Add/edit/delete products.
-- Store quantity, unit, purchase price, expiry date, and optional nutrition fields.
+- Store quantity, unit, mandatory purchase price, expiry date, category, and mandatory nutrition fields.
 - Search and filter by product name, expiry date, and category.
+- Require app-defined units or explicit custom-unit creation with conversion relationships where feasible.
 
 ### 2) Recipe management
 - Add/edit/delete recipes.
@@ -31,6 +32,7 @@
 - Match scanned barcode to known local products first.
 - If unknown, query a public barcode database and allow user confirmation before import.
 - Support provider fallback behavior through adapter abstraction.
+- Accept barcode values without requiring external barcode verification to pass validation.
 
 ### 7) Data and sync model
 - Single-user product scope.
@@ -43,11 +45,11 @@
 ## Nutrition scope for MVP
 
 Required nutrition fields:
-- Calories
-- Protein
-- Carbs
-- Sugars
-- Fats
+- caloriesPer100
+- proteinPer100
+- carbsPer100
+- sugarsPer100
+- fatsPer100
 
 ## Out of scope for initial MVP
 
@@ -61,6 +63,8 @@ Required nutrition fields:
 
 - Batch cooking workflows are deferred to future development.
 
-## Clarification tracking
+## Clarification and data-model tracking
 
-Finalized ambiguity decisions and architecture-impact linkage are tracked in `docs/product-requirements/clarifications.md`.
+Finalized ambiguity decisions and architecture-impact linkage are tracked in `docs/product-requirements/clarifications.md` and ADR 0002.
+
+Canonical entity definitions, constraints, and relationships are tracked in `docs/architecture/data-model.md`.

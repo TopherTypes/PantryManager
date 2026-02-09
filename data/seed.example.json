@@ -1,7 +1,8 @@
 {
   "metadata": {
     "version": "0.1.0",
-    "description": "Example shape for future app seed/import data"
+    "description": "Example shape for future app seed/import data",
+    "defaultCurrency": "GBP"
   },
   "inventory": [
     {
@@ -14,10 +15,12 @@
       "barcode": "0000000000000",
       "nutrition": {
         "caloriesPer100": 884,
-        "fatPer100": 100,
         "proteinPer100": 0,
-        "carbsPer100": 0
-      }
+        "carbsPer100": 0,
+        "sugarsPer100": 0,
+        "fatsPer100": 100
+      },
+      "category": "oil"
     }
   ],
   "recipes": [

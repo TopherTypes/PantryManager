@@ -30,8 +30,8 @@
 
 ### 6) Barcode-assisted updates
 - Match scanned barcode to known local products first.
-- If unknown, query a public barcode database and allow user confirmation before import.
-- Support provider fallback behavior through adapter abstraction.
+- If unknown, query Open Food Facts through an adapter contract and require user confirmation before import.
+- Retry provider lookup up to 3 times for transient failures before falling back to manual entry.
 - Accept barcode values without requiring external barcode verification to pass validation.
 
 ### 7) Data and sync model
@@ -41,6 +41,46 @@
 ### 8) Data lifecycle and retention
 - Archive most data for 30 days before deletion.
 - Retain pricing data for 12 months.
+
+
+## Barcode integration behavior contract (MVP)
+
+### Functional flow
+
+1. User scans or enters a barcode.
+2. App attempts local barcode match first.
+3. If local match is not found, app calls Open Food Facts through adapter abstraction.
+4. On transient failures, app retries lookup up to 3 times before routing to manual entry.
+5. App displays a prefilled draft and requires explicit user confirmation before save.
+
+### Provider response mapping requirements
+
+Adapters must map provider payloads into the PantryManager canonical draft fields:
+
+- `barcode`
+- `name`
+- `brand` (optional)
+- `quantity` + `unit` (optional)
+- `category` (optional)
+- `caloriesPer100`, `proteinPer100`, `carbsPer100`, `sugarsPer100`, `fatsPer100`
+
+If any required nutrition field is missing, the app must require manual completion before save.
+
+### Failure-state behavior
+
+- Timeout/network failure: retry up to 3 times, then continue with manual entry.
+- Quota/rate-limit response: continue with manual entry and show explanatory messaging.
+- Not-found response: show “No provider match” and continue with manual entry.
+- Malformed provider payload: discard payload and continue with manual entry.
+- Offline mode: warn the user, skip provider calls, and continue with local match/manual entry.
+
+### Non-functional integration constraints (confirmed)
+
+- Open Food Facts is the approved provider API for MVP.
+- Barcode scanning is hardware-handled; no dedicated barcode reader API integration is required.
+- Timeout/retry policy is fixed at 3 retry attempts for transient failures.
+- Offline fallback is local-only lookup plus manual entry.
+- Data privacy requirements remain applicable to outbound requests and telemetry/logging.
 
 ## Nutrition scope for MVP
 

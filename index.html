@@ -32,23 +32,131 @@
       </nav>
 
       <main class="app-main">
-        <!-- Inventory panel wireframe -->
         <section id="inventory" class="panel is-active" aria-labelledby="inventory-heading">
           <h2 id="inventory-heading">Inventory</h2>
           <p>Track quantities, prices, expiry dates, and nutritional details.</p>
-          <div class="card-grid">
-            <article class="card placeholder">
+
+          <div class="card inventory-toolbar">
+            <h3>Search & Filters</h3>
+            <div class="filter-grid">
+              <label>
+                Product name
+                <input id="inventory-search-name" type="search" placeholder="Search by name" />
+              </label>
+              <label>
+                Expiry date on or before
+                <input id="inventory-filter-expiry" type="date" />
+              </label>
+              <label>
+                Category
+                <input id="inventory-filter-category" type="text" placeholder="e.g. dairy" />
+              </label>
+            </div>
+          </div>
+
+          <div class="card-grid inventory-grid">
+            <article class="card">
               <h3>Product List</h3>
-              <p>Placeholder for searchable product table.</p>
+              <p id="inventory-results-summary" class="helper-text" aria-live="polite"></p>
+              <div class="table-wrap">
+                <table class="inventory-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Quantity</th>
+                      <th>Unit</th>
+                      <th>Price</th>
+                      <th>Category</th>
+                      <th>Expiry</th>
+                      <th>Barcode</th>
+                      <th>Nutrition (per 100)</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventory-table-body"></tbody>
+                </table>
+              </div>
             </article>
-            <article class="card placeholder">
-              <h3>Add / Edit Product</h3>
-              <p>Placeholder for product form (name, quantity, expiry, nutrition, barcode).</p>
+
+            <article class="card">
+              <h3 id="inventory-form-heading">Add Product</h3>
+              <p class="helper-text">Fields marked * are required by the MVP data model.</p>
+              <div id="inventory-form-feedback" class="form-feedback" role="alert" aria-live="assertive"></div>
+              <form id="inventory-form" novalidate>
+                <input type="hidden" id="inventory-item-id" />
+                <div class="form-grid">
+                  <label>
+                    Name *
+                    <input id="item-name" name="name" type="text" maxlength="120" required />
+                  </label>
+                  <label>
+                    Quantity *
+                    <input id="item-quantity" name="quantity" type="number" min="0.01" step="0.01" required />
+                  </label>
+                  <label>
+                    Unit *
+                    <select id="item-unit" name="unit" required>
+                      <option value="">Select a unit</option>
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="ml">ml</option>
+                      <option value="l">l</option>
+                      <option value="count">count</option>
+                    </select>
+                  </label>
+                  <label>
+                    Price *
+                    <input id="item-price" name="price" type="number" min="0" step="0.01" required />
+                  </label>
+                  <label>
+                    Expiry date
+                    <input id="item-expiry" name="expiryDate" type="date" />
+                  </label>
+                  <label>
+                    Barcode
+                    <input id="item-barcode" name="barcode" type="text" />
+                  </label>
+                  <label>
+                    Category
+                    <input id="item-category" name="category" type="text" />
+                  </label>
+                </div>
+
+                <fieldset class="nutrition-fieldset">
+                  <legend>Nutrition per 100 * (all required)</legend>
+                  <div class="form-grid nutrition-grid">
+                    <label>
+                      Calories *
+                      <input id="nutrition-calories" name="caloriesPer100" type="number" min="0" step="0.01" required />
+                    </label>
+                    <label>
+                      Protein *
+                      <input id="nutrition-protein" name="proteinPer100" type="number" min="0" step="0.01" required />
+                    </label>
+                    <label>
+                      Carbs *
+                      <input id="nutrition-carbs" name="carbsPer100" type="number" min="0" step="0.01" required />
+                    </label>
+                    <label>
+                      Sugars *
+                      <input id="nutrition-sugars" name="sugarsPer100" type="number" min="0" step="0.01" required />
+                    </label>
+                    <label>
+                      Fats *
+                      <input id="nutrition-fats" name="fatsPer100" type="number" min="0" step="0.01" required />
+                    </label>
+                  </div>
+                </fieldset>
+
+                <div class="form-actions">
+                  <button type="submit" id="inventory-submit">Add Item</button>
+                  <button type="button" id="inventory-cancel-edit" class="button-muted">Cancel Edit</button>
+                </div>
+              </form>
             </article>
           </div>
         </section>
 
-        <!-- Recipes panel wireframe -->
         <section id="recipes" class="panel" aria-labelledby="recipes-heading">
           <h2 id="recipes-heading">Recipes</h2>
           <p>Store recipes and map ingredient requirements per serving.</p>
@@ -64,7 +172,6 @@
           </div>
         </section>
 
-        <!-- Recommendations panel wireframe -->
         <section id="recommendations" class="panel" aria-labelledby="recommendations-heading">
           <h2 id="recommendations-heading">Recommendations</h2>
           <p>Suggest recipes based on current pantry availability and configured priorities.</p>
@@ -74,7 +181,6 @@
           </article>
         </section>
 
-        <!-- Meal planning panel wireframe -->
         <section id="meal-plan" class="panel" aria-labelledby="meal-plan-heading">
           <h2 id="meal-plan-heading">Weekly Meal Plan</h2>
           <p>Organize meals by day and time to plan inventory usage.</p>
@@ -84,7 +190,6 @@
           </article>
         </section>
 
-        <!-- Shopping list panel wireframe -->
         <section id="shopping-list" class="panel" aria-labelledby="shopping-list-heading">
           <h2 id="shopping-list-heading">Shopping List</h2>
           <p>Generate ingredient gaps for the selected weekly plan.</p>
@@ -94,7 +199,6 @@
           </article>
         </section>
 
-        <!-- Barcode panel wireframe -->
         <section id="barcode" class="panel" aria-labelledby="barcode-heading">
           <h2 id="barcode-heading">Barcode Tools</h2>
           <p>Scan known products quickly and query public data for unknown barcodes.</p>

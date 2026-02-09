@@ -62,6 +62,10 @@ The following areas are intentionally left open and are documented for follow-up
 
 See `docs/product-requirements/mvp-scope.md` for details.
 
+## Contributing
+
+See `CONTRIBUTING.md` for the Codex + repository-owner contribution workflow, PR expectations, and documentation update policy.
+
 ## Quick start
 
 Open `index.html` directly in a browser for static preview, or run a local server:

@@ -24,7 +24,7 @@
           <input id="global-search" type="search" placeholder="Search app ( / )" />
         </div>
         <p id="global-sync-status" class="sync-pill" aria-live="polite">Local mode</p>
-        <button class="icon-button" type="button" aria-label="Settings placeholder">⚙</button>
+        <button id="settings-open-button" class="icon-button" type="button" aria-label="Open settings">⚙</button>
       </header>
 
       <div class="app-body">
@@ -181,6 +181,76 @@
             </div>
             <fieldset class="nutrition-fieldset"><legend>Nutrition per 100 * (all required)</legend><div class="form-grid nutrition-grid"><label>Calories *<input id="nutrition-calories" name="caloriesPer100" type="number" min="0" step="0.01" required /></label><label>Protein *<input id="nutrition-protein" name="proteinPer100" type="number" min="0" step="0.01" required /></label><label>Carbs *<input id="nutrition-carbs" name="carbsPer100" type="number" min="0" step="0.01" required /></label><label>Sugars *<input id="nutrition-sugars" name="sugarsPer100" type="number" min="0" step="0.01" required /></label><label>Fats *<input id="nutrition-fats" name="fatsPer100" type="number" min="0" step="0.01" required /></label></div></fieldset>
             <div class="form-actions"><button type="submit" id="inventory-submit">Save item</button><button type="button" id="inventory-save-add-another" class="button-muted">Save + add another</button><button type="button" id="inventory-cancel-edit" class="button-muted">Cancel</button></div>
+          </form>
+        </article>
+      </dialog>
+
+      <dialog id="settings-dialog" class="sheet-dialog settings-dialog" aria-labelledby="settings-heading">
+        <article class="sheet-card">
+          <div class="sheet-header">
+            <h3 id="settings-heading">Settings</h3>
+            <button type="button" id="settings-close-button" class="icon-button" aria-label="Close settings">✕</button>
+          </div>
+          <p class="helper-text">Control app defaults and persist your preferences with local/cloud sync.</p>
+          <div id="settings-feedback" class="form-feedback" aria-live="polite"></div>
+          <form id="settings-form" novalidate>
+            <section class="card">
+              <h4>General</h4>
+              <div class="form-grid">
+                <label>
+                  Start screen
+                  <select id="setting-start-panel" name="startPanel">
+                    <option value="inventory">Inventory</option>
+                    <option value="recipes">Recipes</option>
+                    <option value="recommendations">Recommendations</option>
+                    <option value="meal-plan">Meal Plan</option>
+                    <option value="shopping-list">Shopping List</option>
+                    <option value="barcode">Barcode</option>
+                    <option value="sync">Sync</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section class="card">
+              <h4>Inventory</h4>
+              <div class="form-grid">
+                <label>
+                  Default list view
+                  <select id="setting-inventory-view" name="inventoryViewMode">
+                    <option value="table">Table</option>
+                    <option value="cards">Cards</option>
+                  </select>
+                </label>
+                <label>
+                  Default sort
+                  <select id="setting-inventory-sort" name="inventorySort">
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="expiry-asc">Expiry (soonest)</option>
+                    <option value="quantity-asc">Quantity (low-high)</option>
+                  </select>
+                </label>
+                <label class="checkbox-row">
+                  <input id="setting-expanded-columns" name="expandedColumns" type="checkbox" />
+                  Show expanded inventory columns by default
+                </label>
+              </div>
+            </section>
+
+            <section class="card">
+              <h4>Planning</h4>
+              <div class="form-grid">
+                <label>
+                  Meal plan week start
+                  <input id="setting-meal-plan-week-start" name="mealPlanWeekStart" type="date" />
+                </label>
+              </div>
+            </section>
+
+            <div class="form-actions">
+              <button type="submit" id="settings-save-button">Save settings</button>
+              <button type="button" id="settings-reset-button" class="button-muted">Reset to defaults</button>
+            </div>
           </form>
         </article>
       </dialog>

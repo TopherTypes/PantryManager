@@ -15,7 +15,7 @@ const STORAGE_KEYS = {
  * The controller intentionally treats cloud sync as optional: all failures should
  * keep the application fully operational in local-only mode.
  */
-export function initializeSyncController(inventoryController, recipeController, plannerController) {
+export function initializeSyncController(inventoryController, recipeController, plannerController, settingsController) {
   const storage = createLocalStorageAdapter('pantrymanager');
   const driveClient = new GoogleDriveSyncClient();
   const googleAuth = createGoogleAuthClient();
@@ -90,13 +90,14 @@ export function initializeSyncController(inventoryController, recipeController, 
 
   /**
    * Collect full app state snapshot for persistence and sync.
-   * @returns {{inventory: any[], recipes: any[], mealPlans: any[]}}
+   * @returns {{inventory: any[], recipes: any[], mealPlans: any[], settings: Record<string, any>}}
    */
   function buildAppStateSnapshot() {
     return {
       inventory: inventoryController.items,
       recipes: recipeController.recipes,
       mealPlans: plannerController.mealPlanEntries,
+      settings: settingsController?.settings || {},
     };
   }
 
@@ -109,7 +110,7 @@ export function initializeSyncController(inventoryController, recipeController, 
 
   /**
    * Hydrate controllers from a state payload.
-   * @param {{inventory?: any[], recipes?: any[], mealPlans?: any[]}} state
+   * @param {{inventory?: any[], recipes?: any[], mealPlans?: any[], settings?: Record<string, any>}} state
    */
   function applyState(state) {
     if (!state || typeof state !== 'object') {
@@ -119,6 +120,7 @@ export function initializeSyncController(inventoryController, recipeController, 
     inventoryController.replaceItems(state.inventory || []);
     recipeController.replaceRecipes(state.recipes || []);
     plannerController.replaceMealPlanEntries(state.mealPlans || []);
+    settingsController?.replaceSettings(state.settings || {});
   }
 
   function hydrateFromLocalStorage() {
@@ -147,6 +149,9 @@ export function initializeSyncController(inventoryController, recipeController, 
     inventoryController.onItemsUpdated = safePersist;
     recipeController.onRecipesUpdated = safePersist;
     plannerController.onMealPlanUpdated = safePersist;
+    if (settingsController) {
+      settingsController.onSettingsUpdated = safePersist;
+    }
   }
 
   function triggerLocalSave() {

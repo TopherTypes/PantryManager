@@ -1,3 +1,9 @@
+/**
+ * Usage:
+ * - Use `validateRecipe`/`validateRecipeIngredient` during recipe creation.
+ * - Use `validateAndNormalizeRecipeForInventory` before planner aggregation so
+ *   ingredient units are normalized against inventory families.
+ */
 import {
   combineValidationResults,
   validateId,
@@ -5,6 +11,11 @@ import {
 } from '../validation/validators.js';
 import { allowedUnits, normalizeToFamilyBase } from './conversion.js';
 
+/**
+ * Validate a recipe ingredient row.
+ * @param {Record<string, any>} ingredient - Ingredient row with inventory link and quantity.
+ * @returns {import('../validation/validators.js').ValidationResult} Ingredient validation result.
+ */
 export function validateRecipeIngredient(ingredient) {
   const errors = [];
   errors.push(...validateId(ingredient.inventoryItemId).errors);
@@ -15,6 +26,11 @@ export function validateRecipeIngredient(ingredient) {
   return { isValid: errors.length === 0, errors };
 }
 
+/**
+ * Validate a recipe payload and all ingredient rows.
+ * @param {Record<string, any>} recipe - Candidate recipe.
+ * @returns {import('../validation/validators.js').ValidationResult} Recipe validation result.
+ */
 export function validateRecipe(recipe) {
   const errors = [];
   if (!recipe.name || recipe.name.length < 1 || recipe.name.length > 120) {
@@ -94,6 +110,12 @@ export function validateAndNormalizeRecipeForInventory(recipe, inventoryItems) {
   };
 }
 
+/**
+ * Insert or replace a recipe by ID.
+ * @param {Record<string, any>[]} recipes - Existing recipe collection.
+ * @param {Record<string, any>} recipe - Recipe to insert or replace.
+ * @returns {Record<string, any>[]} Updated immutable recipe collection.
+ */
 export function upsertRecipe(recipes, recipe) {
   const existingIndex = recipes.findIndex((entry) => entry.id === recipe.id);
   if (existingIndex === -1) return [...recipes, recipe];

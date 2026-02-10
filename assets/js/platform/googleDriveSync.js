@@ -1,4 +1,10 @@
 /**
+ * Usage:
+ * - Use `createSyncEnvelope` before uploading state snapshots to Drive.
+ * - Use `resolveSyncConflict` and `migrateSyncEnvelope` when importing remote
+ *   snapshots so merge and schema behavior remains deterministic.
+ */
+/**
  * Google Drive-backed import/export/sync utilities for single-user continuity.
  *
  * ADR 0002 deliberately keeps MVP as single-user. This module therefore optimizes for

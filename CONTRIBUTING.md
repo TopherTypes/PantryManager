@@ -138,7 +138,48 @@ When Codex performs repository work, it should:
 5. Avoid introducing process ambiguity; prefer explicit rules.
 
 
-## 10) MVP release checklist ownership
+
+## 10) Lightweight documentation and comment standard
+
+The codebase uses a lightweight documentation contract for JavaScript modules.
+
+Required baseline:
+
+1. **Exported functions require JSDoc blocks**
+   - Every `export function` must include a JSDoc block directly above the export.
+   - At minimum document intent, parameter meaning, and return shape.
+
+2. **Public contract modules require usage notes**
+   - Any module that exports symbols must include top-level **Usage:** notes near the top of the file.
+   - Usage notes describe where callers should import from and what entrypoint should be preferred.
+
+3. **Comment non-obvious logic only**
+   - Add comments for algorithmic branches, rounding/ordering policies, schema migration assumptions, or other behavior that is not obvious from the code.
+   - Avoid repeating what the code already states.
+
+4. **Refactor update expectation**
+   - During refactors, update JSDoc and Usage notes in the same commit as behavior changes.
+   - Removing or renaming an exported API without updating its docs is treated as an incomplete change.
+
+Initial enforcement scope:
+
+- `assets/js/domain`
+- `assets/js/platform`
+- `assets/js/validation`
+
+Local and CI guardrail command:
+
+```bash
+npm run qa:doc-contracts
+```
+
+This guardrail fails when:
+
+- an exported function is missing JSDoc,
+- stale `TODO`/`FIXME` markers exist,
+- an exported module is missing top-level **Usage:** notes.
+
+## 11) MVP release checklist ownership
 
 Before merging a release-oriented PR, confirm checklist alignment with MVP capabilities:
 

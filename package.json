@@ -7,6 +7,7 @@
     "qa:smoke": "bash scripts/qa/smoke-checks.sh",
     "qa:browser-baseline": "bash scripts/qa/browser-baseline-check.sh",
     "qa:a11y": "node scripts/qa/a11y-check.mjs",
-    "qa:docs": "bash scripts/qa/doc-update-check.sh"
+    "qa:docs": "bash scripts/qa/doc-update-check.sh",
+    "qa:doc-contracts": "node scripts/qa/doc-contract-guardrail.mjs"
   }
 }

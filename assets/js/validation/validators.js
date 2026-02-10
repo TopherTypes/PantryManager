@@ -1,3 +1,10 @@
+/**
+ * Usage:
+ * - Use validator helpers directly from domain modules to keep business rules
+ *   centralized and deterministic.
+ * - Use `combineValidationResults` when composing multiple validation steps
+ *   into one controller-facing error payload.
+ */
 import {
   DATE_PATTERN,
   DATETIME_UTC_PATTERN,

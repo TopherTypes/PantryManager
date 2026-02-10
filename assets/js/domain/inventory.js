@@ -1,3 +1,10 @@
+/**
+ * Usage:
+ * - Use `validateInventoryDraft` for form-time validation and
+ *   `validateInventoryItem` for persisted records that require IDs.
+ * - Use immutable helpers (`upsertInventoryItem`, `archiveInventoryItem`) when
+ *   mutating inventory collections in controllers.
+ */
 import {
   combineValidationResults,
   validateDate,
@@ -51,10 +58,20 @@ export function validateInventoryDraft(item) {
   return { isValid: errors.length === 0, errors };
 }
 
+/**
+ * Return required nutrition fields that are missing finite values.
+ * @param {Record<string, number>} nutrition - Candidate nutrition payload.
+ * @returns {string[]} Missing field names.
+ */
 export function getMissingRequiredNutritionFields(nutrition) {
   return REQUIRED_NUTRITION_FIELDS.filter((key) => !Number.isFinite(nutrition?.[key]));
 }
 
+/**
+ * Parse quantity text formatted as `<number><optional-space><unit>`.
+ * @param {string} rawQuantity - Raw user-provided quantity text.
+ * @returns {{quantity: number | null, unit: string | null}} Parsed quantity and unit.
+ */
 export function parseAndNormalizeQuantityText(rawQuantity) {
   const value = String(rawQuantity || '').trim().toLowerCase();
   if (!value) return { quantity: null, unit: null };
@@ -67,12 +84,25 @@ export function parseAndNormalizeQuantityText(rawQuantity) {
   return { quantity: numeric, unit: match[2] };
 }
 
+/**
+ * Insert or replace an inventory item by ID.
+ * @param {Record<string, any>[]} items - Existing inventory array.
+ * @param {Record<string, any>} item - Inventory item to insert or replace.
+ * @returns {Record<string, any>[]} Updated immutable inventory array.
+ */
 export function upsertInventoryItem(items, item) {
   const existingIndex = items.findIndex((entry) => entry.id === item.id);
   if (existingIndex === -1) return [...items, item];
   return items.map((entry, index) => (index === existingIndex ? item : entry));
 }
 
+/**
+ * Mark an inventory item as archived at a UTC timestamp.
+ * @param {Record<string, any>[]} items - Existing inventory array.
+ * @param {string} itemId - Inventory item ID to archive.
+ * @param {string} archivedAtUtc - UTC archive timestamp.
+ * @returns {Record<string, any>[]} Updated immutable inventory array.
+ */
 export function archiveInventoryItem(items, itemId, archivedAtUtc) {
   return items.map((item) => (item.id === itemId ? { ...item, archivedAt: archivedAtUtc } : item));
 }

@@ -1,4 +1,10 @@
 /**
+ * Usage:
+ * - Import constants from this module when implementing validators or domain
+ *   rules that must share canonical format constraints.
+ * - Avoid duplicating regex or required-field sets in other modules.
+ */
+/**
  * Canonical validation constants for PantryManager domain entities.
  *
  * These values are derived from docs/architecture/data-model.md and are kept

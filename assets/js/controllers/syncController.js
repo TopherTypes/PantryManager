@@ -72,9 +72,28 @@ export function initializeSyncController(inventoryController, recipeController, 
       return googleAuth.getAccessToken();
     }
 
-    const token = await googleAuth.requestAccessToken({ prompt: 'consent' });
-    refreshGoogleAuthUi();
-    return token;
+    /**
+     * Ask Google for a token without forcing a full consent re-prompt first.
+     *
+     * If the browser can reuse the existing Google session + prior consent,
+     * this keeps the flow lightweight for returning users.
+     */
+    try {
+      const token = await googleAuth.requestAccessToken({ prompt: '' });
+      refreshGoogleAuthUi();
+      return token;
+    } catch (error) {
+      const requiresInteractivePrompt = /consent_required|interaction_required|login_required/i.test(error?.message || '');
+
+      if (!requiresInteractivePrompt) {
+        throw error;
+      }
+
+      // Fallback path for first-time auth or expired Google sessions.
+      const token = await googleAuth.requestAccessToken({ prompt: 'consent' });
+      refreshGoogleAuthUi();
+      return token;
+    }
   }
 
   function getOrCreateDeviceId() {

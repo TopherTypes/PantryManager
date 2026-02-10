@@ -1,0 +1,34 @@
+name: QA checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run smoke checks
+        run: npm run qa:smoke
+
+      - name: Run browser coverage baseline check
+        run: npm run qa:browser-baseline
+
+      - name: Run accessibility baseline checks
+        run: npm run qa:a11y
+
+      - name: Run documentation update verification
+        run: npm run qa:docs
+
+      - name: Run automated tests
+        run: npm test

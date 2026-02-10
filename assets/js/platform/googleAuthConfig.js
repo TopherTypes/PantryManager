@@ -11,7 +11,7 @@ export const GOOGLE_OAUTH_CONFIG = {
    * Replace this marker with your Google OAuth Web Client ID.
    * Example format: 1234567890-abc123def456.apps.googleusercontent.com
    */
-  clientId: '__REPLACE_WITH_GOOGLE_OAUTH_WEB_CLIENT_ID__',
+  clientId: '1090517659423-98cmjomh6b4b7nntt5ckj8vhdh0e6ase.apps.googleusercontent.com',
   /**
    * Drive App Data scope keeps sync data private and app-specific.
    */

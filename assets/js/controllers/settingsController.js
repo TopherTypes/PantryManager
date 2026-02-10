@@ -7,6 +7,7 @@
 const DEFAULT_SETTINGS = Object.freeze({
   general: {
     theme: 'light',
+    currency: 'USD',
     startPanel: 'inventory',
   },
   inventory: {
@@ -17,6 +18,12 @@ const DEFAULT_SETTINGS = Object.freeze({
   planner: {
     weekStart: '',
   },
+  nutritionTargets: {
+    calories: null,
+    protein: null,
+    carbs: null,
+    fats: null,
+  },
 });
 
 /**
@@ -24,6 +31,30 @@ const DEFAULT_SETTINGS = Object.freeze({
  * Keeping this central avoids accidental drift between form values and runtime checks.
  */
 const THEME_OPTIONS = Object.freeze(new Set(['light', 'dark']));
+const CURRENCY_OPTIONS = Object.freeze(new Set(['USD', 'EUR', 'GBP', 'CAD', 'AUD']));
+
+/**
+ * Normalize a number-like form value to a non-negative numeric target or null.
+ * @param {unknown} value
+ * @returns {number | null}
+ */
+function normalizeTargetValue(value) {
+  if (value === '' || value == null) {
+    return null;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : null;
+}
+
+/**
+ * Resolve an incoming currency code to one of the known supported options.
+ * @param {unknown} value
+ * @returns {string}
+ */
+function normalizeCurrency(value) {
+  return typeof value === 'string' && CURRENCY_OPTIONS.has(value) ? value : DEFAULT_SETTINGS.general.currency;
+}
 
 /**
  * Apply the selected theme mode by writing a data attribute at the document root.
@@ -62,11 +93,16 @@ export function initializeSettingsController(options = {}) {
 
   const fields = {
     theme: document.getElementById('setting-theme'),
+    currency: document.getElementById('setting-currency'),
     startPanel: document.getElementById('setting-start-panel'),
     inventoryView: document.getElementById('setting-inventory-view'),
     inventorySort: document.getElementById('setting-inventory-sort'),
     expandedColumns: document.getElementById('setting-expanded-columns'),
     mealPlanWeekStart: document.getElementById('setting-meal-plan-week-start'),
+    targetCalories: document.getElementById('setting-target-calories'),
+    targetProtein: document.getElementById('setting-target-protein'),
+    targetCarbs: document.getElementById('setting-target-carbs'),
+    targetFats: document.getElementById('setting-target-fats'),
   };
 
   const linkedInputs = {
@@ -89,13 +125,14 @@ export function initializeSettingsController(options = {}) {
   /**
    * Merge incoming settings onto defaults so old payloads remain backward compatible.
    * @param {Record<string, any> | null | undefined} incoming
-   * @returns {{general: {theme: 'light' | 'dark', startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}}}
+   * @returns {{general: {theme: 'light' | 'dark', currency: string, startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}, nutritionTargets: {calories: number | null, protein: number | null, carbs: number | null, fats: number | null}}}
    */
   function normalizeSettings(incoming) {
     const source = incoming && typeof incoming === 'object' ? incoming : {};
     return {
       general: {
         theme: normalizeTheme(source.general?.theme),
+        currency: normalizeCurrency(source.general?.currency),
         startPanel: source.general?.startPanel || DEFAULT_SETTINGS.general.startPanel,
       },
       inventory: {
@@ -106,6 +143,12 @@ export function initializeSettingsController(options = {}) {
       planner: {
         weekStart: source.planner?.weekStart || DEFAULT_SETTINGS.planner.weekStart,
       },
+      nutritionTargets: {
+        calories: normalizeTargetValue(source.nutritionTargets?.calories),
+        protein: normalizeTargetValue(source.nutritionTargets?.protein),
+        carbs: normalizeTargetValue(source.nutritionTargets?.carbs),
+        fats: normalizeTargetValue(source.nutritionTargets?.fats),
+      },
     };
   }
 
@@ -114,11 +157,16 @@ export function initializeSettingsController(options = {}) {
    */
   function renderFormFromState() {
     fields.theme.value = state.settings.general.theme;
+    fields.currency.value = state.settings.general.currency;
     fields.startPanel.value = state.settings.general.startPanel;
     fields.inventoryView.value = state.settings.inventory.viewMode;
     fields.inventorySort.value = state.settings.inventory.sortOrder;
     fields.expandedColumns.checked = state.settings.inventory.expandedColumns;
     fields.mealPlanWeekStart.value = state.settings.planner.weekStart;
+    fields.targetCalories.value = state.settings.nutritionTargets.calories ?? '';
+    fields.targetProtein.value = state.settings.nutritionTargets.protein ?? '';
+    fields.targetCarbs.value = state.settings.nutritionTargets.carbs ?? '';
+    fields.targetFats.value = state.settings.nutritionTargets.fats ?? '';
   }
 
   /**
@@ -132,7 +180,7 @@ export function initializeSettingsController(options = {}) {
 
   /**
    * Apply settings to the existing workspace controls and navigation shell.
-   * @param {{general: {theme: 'light' | 'dark', startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}}} nextSettings
+   * @param {{general: {theme: 'light' | 'dark', currency: string, startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}, nutritionTargets: {calories: number | null, protein: number | null, carbs: number | null, fats: number | null}}} nextSettings
    * @param {{navigateToStartPanel?: boolean}} [options]
    */
   function applySettings(nextSettings, options = {}) {
@@ -150,6 +198,9 @@ export function initializeSettingsController(options = {}) {
 
     linkedInputs.mealPlanWeekStart.value = nextSettings.planner.weekStart || new Date().toISOString().slice(0, 10);
     emitInput(linkedInputs.mealPlanWeekStart);
+
+    // Broadcast a normalized payload so any panel (including reports) can react.
+    window.dispatchEvent(new CustomEvent('app:settings-updated', { detail: structuredClone(nextSettings) }));
 
     if (options.navigateToStartPanel) {
       options.showPanel?.(nextSettings.general.startPanel);
@@ -174,6 +225,7 @@ export function initializeSettingsController(options = {}) {
     return normalizeSettings({
       general: {
         theme: fields.theme.value,
+        currency: fields.currency.value,
         startPanel: fields.startPanel.value,
       },
       inventory: {
@@ -183,6 +235,12 @@ export function initializeSettingsController(options = {}) {
       },
       planner: {
         weekStart: fields.mealPlanWeekStart.value,
+      },
+      nutritionTargets: {
+        calories: fields.targetCalories.value,
+        protein: fields.targetProtein.value,
+        carbs: fields.targetCarbs.value,
+        fats: fields.targetFats.value,
       },
     });
   }

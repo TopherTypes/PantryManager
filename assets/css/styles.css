@@ -213,3 +213,19 @@ textarea {
   border: 1px solid var(--color-border);
   border-radius: 8px;
 }
+
+.barcode-actions {
+  margin: var(--space-sm) 0;
+}
+
+.barcode-draft-summary ul {
+  margin-top: 0.25rem;
+}
+
+.checkbox-row {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 0.5rem;
+  margin: var(--space-sm) 0;
+}

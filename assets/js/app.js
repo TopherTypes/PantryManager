@@ -38,8 +38,243 @@
   });
 
   const appState = initializeInventoryFlow();
+  initializeBarcodeFlow(appState);
   initializeRecipeFlow(appState);
 })();
+
+/**
+ * Barcode lookup domain contracts.
+ *
+ * These typedefs and normalized errors intentionally form a stable boundary between
+ * domain workflow logic and provider implementations. New providers can be added
+ * by implementing `BarcodeLookupAdapter.lookupByBarcode` and returning normalized
+ * result/error shapes without changing orchestration in `initializeBarcodeFlow`.
+ */
+
+/**
+ * @typedef {Object} CanonicalNutritionDraft
+ * @property {number | null} caloriesPer100
+ * @property {number | null} proteinPer100
+ * @property {number | null} carbsPer100
+ * @property {number | null} sugarsPer100
+ * @property {number | null} fatsPer100
+ */
+
+/**
+ * @typedef {Object} CanonicalProductDraft
+ * @property {string} barcode
+ * @property {string} name
+ * @property {string | null} brand
+ * @property {number | null} quantity
+ * @property {string | null} unit
+ * @property {string | null} category
+ * @property {CanonicalNutritionDraft} nutrition
+ */
+
+/**
+ * @typedef {Object} BarcodeLookupAdapterResult
+ * @property {boolean} ok
+ * @property {CanonicalProductDraft | null} draft
+ * @property {NormalizedBarcodeLookupError | null} error
+ */
+
+/**
+ * @typedef {Object} NormalizedBarcodeLookupError
+ * @property {'transient' | 'rate_limit' | 'not_found' | 'malformed' | 'offline'} kind
+ * @property {string} message
+ */
+
+/**
+ * @typedef {Object} BarcodeLookupAdapter
+ * @property {(barcode: string, options?: {signal?: AbortSignal}) => Promise<BarcodeLookupAdapterResult>} lookupByBarcode
+ */
+
+const REQUIRED_NUTRITION_KEYS = ['caloriesPer100', 'proteinPer100', 'carbsPer100', 'sugarsPer100', 'fatsPer100'];
+
+/**
+ * Open Food Facts adapter that normalizes provider-specific payload and error semantics.
+ *
+ * Notes for future providers:
+ * - Keep provider logic in adapters only.
+ * - Always return canonical draft + normalized errors from this contract.
+ * - Domain workflow should never branch on provider-specific status codes.
+ *
+ * @returns {BarcodeLookupAdapter}
+ */
+function createOpenFoodFactsAdapter() {
+  const endpoint = 'https://world.openfoodfacts.org/api/v2/product';
+
+  /** @type {BarcodeLookupAdapter} */
+  return {
+    async lookupByBarcode(barcode, options = {}) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'offline',
+            message: 'You appear to be offline. External barcode lookup was skipped; continue with manual entry.'
+          }
+        };
+      }
+
+      let response;
+      try {
+        response = await fetch(`${endpoint}/${encodeURIComponent(barcode)}.json`, {
+          signal: options.signal,
+          headers: { Accept: 'application/json' }
+        });
+      } catch (_error) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'transient',
+            message: 'Temporary network issue while contacting Open Food Facts.'
+          }
+        };
+      }
+
+      if (response.status === 429) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'rate_limit',
+            message: 'Open Food Facts rate limit reached. Continue with manual entry.'
+          }
+        };
+      }
+
+      if (response.status >= 500) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'transient',
+            message: `Open Food Facts temporarily unavailable (HTTP ${response.status}).`
+          }
+        };
+      }
+
+      if (response.status === 404) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'not_found',
+            message: 'No provider match was found for this barcode.'
+          }
+        };
+      }
+
+      let payload;
+      try {
+        payload = await response.json();
+      } catch (_error) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'malformed',
+            message: 'Provider response was malformed and could not be parsed.'
+          }
+        };
+      }
+
+      if (payload?.status === 0 || !payload?.product) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'not_found',
+            message: 'No provider match was found for this barcode.'
+          }
+        };
+      }
+
+      const canonicalDraft = mapOpenFoodFactsProductToCanonicalDraft(payload.product, barcode);
+      if (!canonicalDraft) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'malformed',
+            message: 'Provider response was missing required mapping fields and was discarded.'
+          }
+        };
+      }
+
+      return {
+        ok: true,
+        draft: canonicalDraft,
+        error: null
+      };
+    }
+  };
+}
+
+function mapOpenFoodFactsProductToCanonicalDraft(product, barcode) {
+  const name = String(product?.product_name || '').trim();
+  if (!name) {
+    return null;
+  }
+
+  const quantityResult = parseQuantityAndUnit(product?.quantity);
+  const nutriments = product?.nutriments || {};
+
+  return {
+    barcode,
+    name,
+    brand: String(product?.brands || '').trim() || null,
+    quantity: quantityResult.quantity,
+    unit: quantityResult.unit,
+    category: firstCsvToken(product?.categories),
+    nutrition: {
+      caloriesPer100: toFiniteNumber(nutriments['energy-kcal_100g']),
+      proteinPer100: toFiniteNumber(nutriments.proteins_100g),
+      carbsPer100: toFiniteNumber(nutriments.carbohydrates_100g),
+      sugarsPer100: toFiniteNumber(nutriments.sugars_100g),
+      fatsPer100: toFiniteNumber(nutriments.fat_100g)
+    }
+  };
+}
+
+function toFiniteNumber(value) {
+  const normalized = Number(value);
+  return Number.isFinite(normalized) && normalized >= 0 ? normalized : null;
+}
+
+function firstCsvToken(value) {
+  const token = String(value || '')
+    .split(',')
+    .map((segment) => segment.trim())
+    .find(Boolean);
+
+  return token || null;
+}
+
+function parseQuantityAndUnit(rawQuantity) {
+  const value = String(rawQuantity || '').trim().toLowerCase();
+  if (!value) {
+    return { quantity: null, unit: null };
+  }
+
+  const match = value.match(/^(\d+(?:[.,]\d+)?)\s*(kg|g|l|ml|count)$/);
+  if (!match) {
+    return { quantity: null, unit: null };
+  }
+
+  const numeric = Number(match[1].replace(',', '.'));
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return { quantity: null, unit: null };
+  }
+
+  return {
+    quantity: numeric,
+    unit: match[2]
+  };
+}
 
 /**
  * Shared unit conversion utility.
@@ -253,9 +488,7 @@ function initializeInventoryFlow() {
       errors.push('Barcode can only contain letters, numbers, underscores, and dashes.');
     }
 
-    const nutritionKeys = ['caloriesPer100', 'proteinPer100', 'carbsPer100', 'sugarsPer100', 'fatsPer100'];
-
-    nutritionKeys.forEach((key) => {
+    REQUIRED_NUTRITION_KEYS.forEach((key) => {
       const value = item.nutrition?.[key];
       if (!Number.isFinite(value) || value < 0) {
         errors.push(`${key} is required and must be 0 or higher.`);
@@ -380,6 +613,42 @@ function initializeInventoryFlow() {
     }
   }
 
+  function prefillFormFromDraft(draft) {
+    hiddenId.value = '';
+    state.editingItemId = null;
+    formHeading.textContent = 'Add Product';
+    submitButton.textContent = 'Add Item';
+
+    fields.name.value = draft.name || '';
+    fields.quantity.value = draft.quantity != null ? String(draft.quantity) : '';
+    fields.unit.value = draft.unit || '';
+    fields.price.value = '';
+    fields.expiryDate.value = '';
+    fields.barcode.value = draft.barcode || '';
+    fields.category.value = draft.category || '';
+
+    fields.caloriesPer100.value = draft.nutrition.caloriesPer100 != null ? String(draft.nutrition.caloriesPer100) : '';
+    fields.proteinPer100.value = draft.nutrition.proteinPer100 != null ? String(draft.nutrition.proteinPer100) : '';
+    fields.carbsPer100.value = draft.nutrition.carbsPer100 != null ? String(draft.nutrition.carbsPer100) : '';
+    fields.sugarsPer100.value = draft.nutrition.sugarsPer100 != null ? String(draft.nutrition.sugarsPer100) : '';
+    fields.fatsPer100.value = draft.nutrition.fatsPer100 != null ? String(draft.nutrition.fatsPer100) : '';
+
+    const missingNutrition = getMissingRequiredNutritionFields(draft.nutrition);
+    if (missingNutrition.length > 0) {
+      setFeedback([
+        'Provider draft applied, but save is blocked until required nutrition fields are completed manually.',
+        `Missing: ${missingNutrition.join(', ')}.`
+      ], 'error');
+      return;
+    }
+
+    setFeedback(['Provider draft applied. Review all fields and explicitly save when ready.'], 'info');
+  }
+
+  function getLocalMatchByBarcode(barcode) {
+    return state.items.find((item) => item.barcode === barcode) || null;
+  }
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const payload = buildPayload();
@@ -444,7 +713,205 @@ function initializeInventoryFlow() {
   resetFormToCreateMode();
   renderTable();
 
-  return state;
+  return {
+    get items() {
+      return state.items;
+    },
+    set onItemsUpdated(handler) {
+      state.onItemsUpdated = handler;
+    },
+    getLocalMatchByBarcode,
+    prefillFormFromDraft,
+    enterEditMode,
+    focusForm() {
+      fields.name.focus();
+    }
+  };
+}
+
+function getMissingRequiredNutritionFields(nutrition) {
+  return REQUIRED_NUTRITION_KEYS.filter((key) => !Number.isFinite(nutrition?.[key]));
+}
+
+function initializeBarcodeFlow(inventoryState) {
+  const adapter = createOpenFoodFactsAdapter();
+
+  const barcodeInput = document.getElementById('barcode-input');
+  const lookupButton = document.getElementById('barcode-lookup-button');
+  const barcodeFeedback = document.getElementById('barcode-lookup-feedback');
+  const draftContainer = document.getElementById('barcode-draft-container');
+  const draftSummary = document.getElementById('barcode-draft-summary');
+  const confirmCheckbox = document.getElementById('barcode-confirm-import');
+  const applyDraftButton = document.getElementById('barcode-apply-draft-button');
+
+  const state = {
+    currentDraft: null,
+    draftSource: null,
+    missingNutrition: []
+  };
+
+  function setBarcodeFeedback(messages, level = 'info') {
+    if (!messages.length) {
+      barcodeFeedback.textContent = '';
+      barcodeFeedback.className = 'form-feedback';
+      return;
+    }
+
+    barcodeFeedback.innerHTML = `<ul>${messages.map((message) => `<li>${message}</li>`).join('')}</ul>`;
+    barcodeFeedback.className = `form-feedback is-${level}`;
+  }
+
+  function setDraftVisibility(isVisible) {
+    draftContainer.hidden = !isVisible;
+    if (!isVisible) {
+      confirmCheckbox.checked = false;
+      applyDraftButton.disabled = true;
+      draftSummary.innerHTML = '';
+    }
+  }
+
+  function renderDraft(draft, sourceLabel) {
+    state.currentDraft = draft;
+    state.draftSource = sourceLabel;
+    state.missingNutrition = getMissingRequiredNutritionFields(draft.nutrition);
+
+    const nutritionRows = REQUIRED_NUTRITION_KEYS
+      .map((key) => {
+        const value = draft.nutrition[key];
+        const formattedValue = value == null ? '<em>missing</em>' : String(value);
+        return `<li><strong>${escapeHtml(key)}:</strong> ${formattedValue}</li>`;
+      })
+      .join('');
+
+    draftSummary.innerHTML = `
+      <p><strong>Source:</strong> ${escapeHtml(sourceLabel)}</p>
+      <p><strong>Name:</strong> ${escapeHtml(draft.name)}</p>
+      <p><strong>Barcode:</strong> ${escapeHtml(draft.barcode)}</p>
+      <p><strong>Brand:</strong> ${escapeHtml(draft.brand || '-')}</p>
+      <p><strong>Quantity/Unit:</strong> ${draft.quantity ?? '-'} ${escapeHtml(draft.unit || '')}</p>
+      <p><strong>Category:</strong> ${escapeHtml(draft.category || '-')}</p>
+      <p><strong>Nutrition:</strong></p>
+      <ul>${nutritionRows}</ul>
+    `;
+
+    setDraftVisibility(true);
+  }
+
+  async function lookupWithRetry(barcode) {
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const result = await adapter.lookupByBarcode(barcode);
+      if (result.ok) {
+        return result;
+      }
+
+      if (!result.error || result.error.kind !== 'transient') {
+        return result;
+      }
+
+      if (attempt === maxAttempts) {
+        return {
+          ok: false,
+          draft: null,
+          error: {
+            kind: 'transient',
+            message: `Provider lookup failed after ${maxAttempts} attempts. Continue with manual entry.`
+          }
+        };
+      }
+    }
+
+    return {
+      ok: false,
+      draft: null,
+      error: {
+        kind: 'transient',
+        message: 'Provider lookup exhausted retries. Continue with manual entry.'
+      }
+    };
+  }
+
+  async function runLookup() {
+    const barcode = barcodeInput.value.trim();
+    setDraftVisibility(false);
+
+    if (!barcode) {
+      setBarcodeFeedback(['Enter a barcode value before lookup.'], 'error');
+      return;
+    }
+
+    const localMatch = inventoryState.getLocalMatchByBarcode(barcode);
+    if (localMatch) {
+      const localDraft = {
+        barcode: localMatch.barcode || barcode,
+        name: localMatch.name,
+        brand: null,
+        quantity: localMatch.quantity,
+        unit: localMatch.unit,
+        category: localMatch.category,
+        nutrition: { ...localMatch.nutrition }
+      };
+
+      renderDraft(localDraft, 'Local inventory');
+      setBarcodeFeedback([
+        `Local match found for barcode ${barcode}.`,
+        'Review the draft and explicitly confirm before prefill.'
+      ], 'success');
+      return;
+    }
+
+    setBarcodeFeedback(['No local match found. Querying Open Food Facts adapter...'], 'info');
+
+    const result = await lookupWithRetry(barcode);
+    if (result.ok && result.draft) {
+      renderDraft(result.draft, 'Open Food Facts');
+      setBarcodeFeedback([
+        'Provider draft loaded successfully.',
+        'Explicit confirmation is required before this draft can prefill the inventory form.'
+      ], 'success');
+      return;
+    }
+
+    const error = result.error;
+    const manualFallbackMessage =
+      error?.kind === 'rate_limit'
+        ? 'Provider rate limit reached. Please continue with manual entry.'
+        : error?.kind === 'not_found'
+          ? 'No provider match found. Please continue with manual entry.'
+          : error?.kind === 'malformed'
+            ? 'Provider payload was malformed and discarded. Please continue with manual entry.'
+            : error?.kind === 'offline'
+              ? 'You are offline. External lookup skipped; continue with manual entry.'
+              : 'Lookup temporarily failed after retries. Please continue with manual entry.';
+
+    setBarcodeFeedback([manualFallbackMessage], 'info');
+  }
+
+  lookupButton.addEventListener('click', () => {
+    runLookup();
+  });
+
+  confirmCheckbox.addEventListener('change', () => {
+    applyDraftButton.disabled = !confirmCheckbox.checked;
+  });
+
+  applyDraftButton.addEventListener('click', () => {
+    if (!state.currentDraft || !confirmCheckbox.checked) {
+      setBarcodeFeedback(['Explicit confirmation is required before prefill.'], 'error');
+      return;
+    }
+
+    inventoryState.prefillFormFromDraft(state.currentDraft);
+    inventoryState.focusForm();
+
+    const messages = [`Draft from ${state.draftSource} applied to inventory form.`];
+    if (state.missingNutrition.length > 0) {
+      messages.push('Save is blocked until missing required nutrition fields are manually completed.');
+    }
+
+    setBarcodeFeedback(messages, state.missingNutrition.length > 0 ? 'error' : 'success');
+  });
 }
 
 function initializeRecipeFlow(inventoryState) {

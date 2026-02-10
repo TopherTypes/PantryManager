@@ -114,3 +114,28 @@ Adapters map provider responses into these MVP fields before UI presentation:
 Implementation design decision still pending:
 
 - **Storage technology selection**: localStorage vs IndexedDB.
+
+## Front-end module wiring
+
+The runtime uses ES modules end-to-end from the HTML bootstrap.
+
+- `index.html` loads `assets/js/app.js` via `<script type="module">`.
+- `assets/js/app.js` only performs orchestration and feature-controller wiring.
+- Feature controllers are split by UI concern under `assets/js/controllers/`:
+  - `inventoryController.js`
+  - `recipeController.js`
+  - `barcodeController.js`
+  - `plannerController.js`
+- Controllers own DOM reads/writes, event handlers, and rendering concerns only.
+- Business rules are delegated to `assets/js/domain/*.js` modules.
+- Canonical input validation is delegated to `assets/js/validation/validators.js` (+ constraints).
+
+### Dependency direction
+
+To prevent domain/UI coupling, dependencies flow in one direction:
+
+1. **Bootstrap** imports controllers and wires cross-controller collaboration.
+2. **Controllers** import pure domain + validation modules.
+3. **Domain/validation modules** never import controller modules.
+
+This keeps browser-specific logic at the edge and enables unit testing of business rules without DOM setup.

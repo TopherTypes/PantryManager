@@ -30,5 +30,5 @@ export const REQUIRED_NUTRITION_FIELDS = Object.freeze([
 export const UNIT_FAMILIES = Object.freeze({
   mass: Object.freeze(['g', 'kg', 'oz', 'lb']),
   volume: Object.freeze(['ml', 'l', 'tsp', 'tbsp', 'cup']),
-  count: Object.freeze(['unit', 'item', 'pcs']),
+  count: Object.freeze(['count', 'unit', 'item', 'pcs']),
 });

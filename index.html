@@ -222,28 +222,67 @@
         <section id="recommendations" class="panel" aria-labelledby="recommendations-heading">
           <h2 id="recommendations-heading">Recommendations</h2>
           <p>Suggest recipes based on current pantry availability and configured priorities.</p>
-          <article class="card placeholder">
-            <h3>Suggested Recipes</h3>
-            <p>Placeholder for recommendation logic output.</p>
-          </article>
+          <div class="card-grid">
+            <article class="card" id="recommendations-controls-panel" data-testid="recommendations-controls-panel">
+              <h3>Recommendation Controls</h3>
+              <p class="helper-text">Run ranking against current recipe and inventory state.</p>
+              <div class="form-actions">
+                <button type="button" id="recommendations-run-button" data-testid="recommendations-run-button">Generate Recommendations</button>
+              </div>
+              <p id="recommendations-status" class="helper-text" aria-live="polite" data-testid="recommendations-status"></p>
+            </article>
+
+            <article class="card" id="recommendations-output-panel" data-testid="recommendations-output-panel">
+              <h3>Recommendation Ranking</h3>
+              <div id="recommendations-output" data-testid="recommendations-output"></div>
+            </article>
+          </div>
         </section>
 
         <section id="meal-plan" class="panel" aria-labelledby="meal-plan-heading">
           <h2 id="meal-plan-heading">Weekly Meal Plan</h2>
           <p>Organize meals by day and time to plan inventory usage.</p>
-          <article class="card placeholder">
-            <h3>Planner Board</h3>
-            <p>Placeholder for drag-and-drop meal plan calendar.</p>
-          </article>
+          <div class="card-grid">
+            <article class="card" id="meal-plan-controls-panel" data-testid="meal-plan-controls-panel">
+              <h3>Plan Controls</h3>
+              <p class="helper-text">Assign the top recommended recipes into a deterministic weekly rotation.</p>
+              <div class="form-grid">
+                <label>
+                  Week start date
+                  <input type="date" id="meal-plan-week-start" data-testid="meal-plan-week-start" />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button type="button" id="meal-plan-generate-button" data-testid="meal-plan-generate-button">Generate Weekly Plan</button>
+              </div>
+              <p id="meal-plan-status" class="helper-text" aria-live="polite" data-testid="meal-plan-status"></p>
+            </article>
+
+            <article class="card" id="meal-plan-output-panel" data-testid="meal-plan-output-panel">
+              <h3>Weekly Slot Assignments</h3>
+              <div id="meal-plan-output" data-testid="meal-plan-output"></div>
+            </article>
+          </div>
         </section>
 
         <section id="shopping-list" class="panel" aria-labelledby="shopping-list-heading">
           <h2 id="shopping-list-heading">Shopping List</h2>
           <p>Generate ingredient gaps for the selected weekly plan.</p>
-          <article class="card placeholder">
-            <h3>Generated List</h3>
-            <p>Placeholder for grouped shopping list items and estimated spend.</p>
-          </article>
+          <div class="card-grid">
+            <article class="card" id="shopping-list-controls-panel" data-testid="shopping-list-controls-panel">
+              <h3>Shopping Controls</h3>
+              <p class="helper-text">Build grouped shopping output from the active weekly plan.</p>
+              <div class="form-actions">
+                <button type="button" id="shopping-list-generate-button" data-testid="shopping-list-generate-button">Generate Shopping List</button>
+              </div>
+              <p id="shopping-list-status" class="helper-text" aria-live="polite" data-testid="shopping-list-status"></p>
+            </article>
+
+            <article class="card" id="shopping-list-output-panel" data-testid="shopping-list-output-panel">
+              <h3>Grouped Shopping Output</h3>
+              <div id="shopping-list-output" data-testid="shopping-list-output"></div>
+            </article>
+          </div>
         </section>
 
         <section id="barcode" class="panel" aria-labelledby="barcode-heading">
@@ -283,6 +322,6 @@
       </footer>
     </div>
 
-    <script src="assets/js/app.js" defer></script>
+    <script type="module" src="assets/js/app.js"></script>
   </body>
 </html>

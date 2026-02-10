@@ -1,3 +1,7 @@
+import { rankRecipeRecommendations } from './domain/recommendations.js';
+import { aggregateIngredientDemand, addMealPlanEntry } from './domain/planner.js';
+import { generateShoppingItems, groupShoppingItemsByStoreSection } from './domain/shopping.js';
+
 /**
  * PantryManager UI script.
  *
@@ -39,7 +43,8 @@
 
   const appState = initializeInventoryFlow();
   initializeBarcodeFlow(appState);
-  initializeRecipeFlow(appState);
+  const recipeState = initializeRecipeFlow(appState);
+  initializePlanningAssistantFlow(appState, recipeState);
 })();
 
 /**
@@ -407,7 +412,7 @@ function initializeInventoryFlow() {
       }
     ],
     editingItemId: null,
-    onItemsUpdated: null
+    onItemsUpdatedHandlers: []
   };
 
   const tableBody = document.getElementById('inventory-table-body');
@@ -608,9 +613,9 @@ function initializeInventoryFlow() {
 
   function commitItemsUpdate(nextItems) {
     state.items = nextItems;
-    if (typeof state.onItemsUpdated === 'function') {
-      state.onItemsUpdated(state.items);
-    }
+    state.onItemsUpdatedHandlers.forEach((handler) => {
+      handler(state.items);
+    });
   }
 
   function prefillFormFromDraft(draft) {
@@ -718,7 +723,9 @@ function initializeInventoryFlow() {
       return state.items;
     },
     set onItemsUpdated(handler) {
-      state.onItemsUpdated = handler;
+      if (typeof handler === 'function') {
+        state.onItemsUpdatedHandlers.push(handler);
+      }
     },
     getLocalMatchByBarcode,
     prefillFormFromDraft,
@@ -917,7 +924,8 @@ function initializeBarcodeFlow(inventoryState) {
 function initializeRecipeFlow(inventoryState) {
   const state = {
     recipes: [],
-    editingRecipeId: null
+    editingRecipeId: null,
+    onRecipesUpdated: null
   };
 
   const recipeTableBody = document.getElementById('recipe-table-body');
@@ -933,6 +941,20 @@ function initializeRecipeFlow(inventoryState) {
   const recipeCancelButton = document.getElementById('recipe-cancel-edit');
   const ingredientsContainer = document.getElementById('ingredient-rows');
   const addIngredientButton = document.getElementById('recipe-add-ingredient');
+
+  /**
+   * Commits recipe collection changes and notifies downstream consumers.
+   *
+   * The planner/shopping controller reads recipe state through this callback, so
+   * every mutation path should route through this helper to keep UI projections in sync.
+   */
+  function commitRecipesUpdate(nextRecipes) {
+    state.recipes = nextRecipes;
+
+    if (typeof state.onRecipesUpdated === 'function') {
+      state.onRecipesUpdated(state.recipes);
+    }
+  }
 
   function setRecipeFeedback(messages, level = 'error') {
     if (messages.length === 0) {
@@ -1169,9 +1191,9 @@ function initializeRecipeFlow(inventoryState) {
     });
 
     // Guardrail for data integrity: remove dangling ingredient references if an inventory item was deleted.
-    state.recipes = state.recipes.filter((recipe) =>
+    commitRecipesUpdate(state.recipes.filter((recipe) =>
       recipe.ingredients.every((ingredient) => inventoryState.items.some((item) => item.id === ingredient.inventoryItemId))
-    );
+    ));
     renderRecipeTable();
   }
 
@@ -1219,9 +1241,9 @@ function initializeRecipeFlow(inventoryState) {
     };
 
     if (state.editingRecipeId) {
-      state.recipes = state.recipes.map((recipe) => (recipe.id === state.editingRecipeId ? nextRecipe : recipe));
+      commitRecipesUpdate(state.recipes.map((recipe) => (recipe.id === state.editingRecipeId ? nextRecipe : recipe)));
     } else {
-      state.recipes.push(nextRecipe);
+      commitRecipesUpdate([...state.recipes, nextRecipe]);
     }
 
     renderRecipeTable();
@@ -1260,7 +1282,7 @@ function initializeRecipeFlow(inventoryState) {
     }
 
     if (action === 'delete-recipe') {
-      state.recipes = state.recipes.filter((recipe) => recipe.id !== recipeId);
+      commitRecipesUpdate(state.recipes.filter((recipe) => recipe.id !== recipeId));
       if (state.editingRecipeId === recipeId) {
         resetRecipeForm();
       }
@@ -1275,6 +1297,270 @@ function initializeRecipeFlow(inventoryState) {
 
   resetRecipeForm();
   renderRecipeTable();
+
+  return {
+    get recipes() {
+      return state.recipes;
+    },
+    set onRecipesUpdated(handler) {
+      state.onRecipesUpdated = handler;
+    }
+  };
+}
+
+/**
+ * Build deterministic meal-plan and shopping projections from live app state.
+ *
+ * This controller intentionally stays read-only for inventory/recipes and owns only
+ * derived planning data so domain modules remain the source of business rules.
+ */
+function initializePlanningAssistantFlow(inventoryState, recipeState) {
+  const recommendationRunButton = document.getElementById('recommendations-run-button');
+  const recommendationStatus = document.getElementById('recommendations-status');
+  const recommendationOutput = document.getElementById('recommendations-output');
+
+  const mealPlanWeekStart = document.getElementById('meal-plan-week-start');
+  const mealPlanGenerateButton = document.getElementById('meal-plan-generate-button');
+  const mealPlanStatus = document.getElementById('meal-plan-status');
+  const mealPlanOutput = document.getElementById('meal-plan-output');
+
+  const shoppingGenerateButton = document.getElementById('shopping-list-generate-button');
+  const shoppingStatus = document.getElementById('shopping-list-status');
+  const shoppingOutput = document.getElementById('shopping-list-output');
+
+  const DAY_SEQUENCE = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const SLOT_SEQUENCE = ['breakfast', 'lunch', 'dinner'];
+
+  const state = {
+    rankedRecommendations: null,
+    mealPlanEntries: []
+  };
+
+  /**
+   * Re-render all projections after state changes to keep cross-panel output consistent.
+   */
+  function renderAllPanels() {
+    renderRecommendations();
+    renderMealPlan();
+    renderShopping();
+  }
+
+  function getCurrentRecipes() {
+    return recipeState.recipes;
+  }
+
+  function getCurrentInventory() {
+    return inventoryState.items;
+  }
+
+  function runRecommendations() {
+    const recipes = getCurrentRecipes();
+    const inventoryItems = getCurrentInventory();
+
+    if (recipes.length === 0) {
+      state.rankedRecommendations = null;
+      recommendationStatus.textContent = 'No recipes available. Add at least one recipe to generate rankings.';
+      renderAllPanels();
+      return;
+    }
+
+    if (inventoryItems.length === 0) {
+      state.rankedRecommendations = null;
+      recommendationStatus.textContent = 'No inventory available. Add inventory items before requesting recommendations.';
+      renderAllPanels();
+      return;
+    }
+
+    state.rankedRecommendations = rankRecipeRecommendations(recipes, inventoryItems);
+    recommendationStatus.textContent = `Generated ${state.rankedRecommendations.allRanked.length} ranked recommendation(s).`;
+    renderAllPanels();
+  }
+
+  function getSelectedWeekStartDate() {
+    return mealPlanWeekStart.value || new Date().toISOString().slice(0, 10);
+  }
+
+  function generateMealPlanEntries() {
+    const rankedEntries = state.rankedRecommendations?.allRanked || [];
+
+    if (rankedEntries.length === 0) {
+      state.mealPlanEntries = [];
+      mealPlanStatus.textContent = 'No recommendation results found. Generate recommendations first.';
+      renderAllPanels();
+      return;
+    }
+
+    const weekStartDate = getSelectedWeekStartDate();
+    let generatedEntries = [];
+    let cursor = 0;
+
+    DAY_SEQUENCE.forEach((_dayName, dayOffset) => {
+      const currentDate = new Date(`${weekStartDate}T00:00:00`);
+      currentDate.setDate(currentDate.getDate() + dayOffset);
+      const isoDate = currentDate.toISOString().slice(0, 10);
+
+      SLOT_SEQUENCE.forEach((slot) => {
+        const recommendationRecord = rankedEntries[cursor % rankedEntries.length];
+
+        if (!recommendationRecord) {
+          return;
+        }
+
+        const nextEntry = {
+          id: `plan_${isoDate}_${slot}`,
+          date: isoDate,
+          slot,
+          recipeId: recommendationRecord.recipe.id,
+          portionMultiplier: 1
+        };
+
+        try {
+          generatedEntries = addMealPlanEntry(generatedEntries, nextEntry);
+          cursor += 1;
+        } catch (_error) {
+          // Duplicate slots are unexpected due to deterministic ID/date construction.
+        }
+      });
+    });
+
+    state.mealPlanEntries = generatedEntries;
+    mealPlanStatus.textContent = `Generated ${generatedEntries.length} weekly meal-plan slot assignment(s).`;
+    renderAllPanels();
+  }
+
+  function renderRecommendations() {
+    const rankedEntries = state.rankedRecommendations?.allRanked || [];
+
+    if (rankedEntries.length === 0) {
+      recommendationOutput.innerHTML = '<p class="helper-text">No recommendation results to display.</p>';
+      return;
+    }
+
+    const itemsMarkup = rankedEntries
+      .map((entry, index) => {
+        const urgency = Number.isFinite(entry.rankingFactors.daysUntilMostUrgentExpiry)
+          ? `${entry.rankingFactors.daysUntilMostUrgentExpiry} day(s)`
+          : 'No expiry signal';
+
+        return `
+          <li id="recommendation-row-${index}" data-testid="recommendation-row-${index}">
+            <strong>${escapeHtml(entry.recipe.name)}</strong>
+            <span> — coverage ${entry.coverage.matched}/${entry.coverage.total}</span>
+            <span>, shortages ${entry.shortages.length}</span>
+            <span>, urgency ${escapeHtml(urgency)}</span>
+          </li>
+        `;
+      })
+      .join('');
+
+    recommendationOutput.innerHTML = `<ol id="recommendations-ranked-list" data-testid="recommendations-ranked-list">${itemsMarkup}</ol>`;
+  }
+
+  function renderMealPlan() {
+    if (state.mealPlanEntries.length === 0) {
+      mealPlanOutput.innerHTML = '<p class="helper-text">No meal-plan entries to display.</p>';
+      return;
+    }
+
+    const recipeById = new Map(getCurrentRecipes().map((recipe) => [recipe.id, recipe]));
+    const rowsMarkup = state.mealPlanEntries
+      .map((entry, index) => {
+        const recipeName = recipeById.get(entry.recipeId)?.name || entry.recipeId;
+        return `
+          <li id="meal-plan-row-${index}" data-testid="meal-plan-row-${index}">
+            <strong>${escapeHtml(entry.date)}</strong>
+            <span> ${escapeHtml(entry.slot)}:</span>
+            <span> ${escapeHtml(recipeName)}</span>
+          </li>
+        `;
+      })
+      .join('');
+
+    mealPlanOutput.innerHTML = `<ul id="meal-plan-assignment-list" data-testid="meal-plan-assignment-list">${rowsMarkup}</ul>`;
+  }
+
+  function renderShopping() {
+    if (state.mealPlanEntries.length === 0) {
+      shoppingOutput.innerHTML = '<p class="helper-text">No shopping data to display because the meal plan is empty.</p>';
+      return;
+    }
+
+    const recipes = getCurrentRecipes();
+    const inventoryItems = getCurrentInventory();
+    const demandRows = aggregateIngredientDemand(state.mealPlanEntries, recipes);
+
+    if (demandRows.length === 0) {
+      shoppingOutput.innerHTML = '<p class="helper-text">No ingredient demand was produced from the active plan.</p>';
+      return;
+    }
+
+    const shoppingItems = generateShoppingItems(demandRows, inventoryItems);
+    if (shoppingItems.length === 0) {
+      shoppingOutput.innerHTML = '<p class="helper-text">No shopping gaps detected. Inventory fully covers the active plan.</p>';
+      return;
+    }
+
+    const groupedBySection = groupShoppingItemsByStoreSection(shoppingItems);
+    const sectionMarkup = Object.entries(groupedBySection)
+      .map(([sectionName, items], groupIndex) => {
+        const itemMarkup = items
+          .map((item, itemIndex) => `
+            <li id="shopping-item-${groupIndex}-${itemIndex}" data-testid="shopping-item-${groupIndex}-${itemIndex}">
+              ${escapeHtml(item.ingredientName)} — missing ${item.missingQuantity} ${escapeHtml(item.unit)}
+            </li>
+          `)
+          .join('');
+
+        return `
+          <section id="shopping-group-${groupIndex}" data-testid="shopping-group-${groupIndex}">
+            <h4>${escapeHtml(sectionName)}</h4>
+            <ul>${itemMarkup}</ul>
+          </section>
+        `;
+      })
+      .join('');
+
+    shoppingOutput.innerHTML = sectionMarkup;
+    shoppingStatus.textContent = `Generated ${shoppingItems.length} shopping item(s) across ${Object.keys(groupedBySection).length} store section(s).`;
+  }
+
+  recommendationRunButton.addEventListener('click', runRecommendations);
+  mealPlanGenerateButton.addEventListener('click', generateMealPlanEntries);
+
+  shoppingGenerateButton.addEventListener('click', () => {
+    if (state.mealPlanEntries.length === 0) {
+      shoppingStatus.textContent = 'No meal plan entries found. Generate a weekly plan first.';
+      renderShopping();
+      return;
+    }
+
+    shoppingStatus.textContent = 'Shopping list refreshed from active plan.';
+    renderShopping();
+  });
+
+  inventoryState.onItemsUpdated = () => {
+    if (state.rankedRecommendations) {
+      runRecommendations();
+      return;
+    }
+
+    renderAllPanels();
+  };
+
+  recipeState.onRecipesUpdated = () => {
+    if (state.rankedRecommendations) {
+      runRecommendations();
+      return;
+    }
+
+    renderAllPanels();
+  };
+
+  recommendationStatus.textContent = 'Generate recommendations to begin planning.';
+  mealPlanStatus.textContent = 'Generate a weekly plan after recommendations are available.';
+  shoppingStatus.textContent = 'Generate a shopping list from the active plan.';
+  mealPlanWeekStart.value = new Date().toISOString().slice(0, 10);
+  renderAllPanels();
 }
 
 function escapeHtml(value) {

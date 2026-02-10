@@ -71,6 +71,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .inventory-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-2); }
 .inventory-item-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-2); background: #fbfdff; }
 .sheet-dialog { border: none; border-radius: var(--radius-lg); width: min(860px, 96vw); box-shadow: var(--shadow-md); padding: 0; }
+.settings-dialog { width: min(720px, 96vw); }
+.settings-dialog form { display: grid; gap: var(--space-2); }
+.settings-dialog h4 { margin: 0 0 var(--space-2); }
 .sheet-card { padding: var(--space-3); }
 .sheet-header, .details-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .details-drawer { position: fixed; top: 0; right: 0; width: min(380px, 100vw); height: 100vh; background: #fff; border-left: 1px solid var(--border); box-shadow: var(--shadow-md); padding: var(--space-3); overflow-y: auto; z-index: 30; }

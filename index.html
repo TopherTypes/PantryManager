@@ -29,6 +29,7 @@
         <button type="button" data-target="meal-plan">Meal Plan</button>
         <button type="button" data-target="shopping-list">Shopping List</button>
         <button type="button" data-target="barcode">Barcode</button>
+        <button type="button" data-target="sync">Sync</button>
       </nav>
 
       <main class="app-main">
@@ -313,6 +314,41 @@
             </article>
           </div>
         </section>
+
+        <section id="sync" class="panel" aria-labelledby="sync-heading">
+          <h2 id="sync-heading">Sync & Backup</h2>
+          <p>Explicit controls for local save, cloud sync/export, and import recovery.</p>
+          <div class="card-grid">
+            <article class="card">
+              <h3>Actions</h3>
+              <p class="helper-text">Use local save for quick persistence. Add a Google access token to sync with Drive.</p>
+              <div class="form-grid">
+                <label>
+                  Google access token (optional for cloud sync)
+                  <input id="sync-google-access-token" type="password" autocomplete="off" placeholder="Paste OAuth access token" />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button type="button" id="sync-save-local-button">Save Locally</button>
+                <button type="button" id="sync-export-button">Export / Sync</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Import</h3>
+              <p class="helper-text">Paste a previously exported envelope or raw app state JSON to import.</p>
+              <label>
+                Import payload
+                <textarea id="sync-import-input" rows="10" placeholder='{"schemaVersion":1,"state":{...}}'></textarea>
+              </label>
+              <div class="form-actions">
+                <button type="button" id="sync-import-button">Import</button>
+              </div>
+            </article>
+          </div>
+          <p id="sync-status" class="helper-text sync-status" aria-live="polite">Sync is optional; the app continues in local-only mode when cloud sync is unavailable.</p>
+        </section>
+
       </main>
 
       <footer class="app-footer">

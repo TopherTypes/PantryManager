@@ -7,20 +7,29 @@ import { escapeHtml } from '../utils/dom.js';
  * Build deterministic meal-plan and shopping projections from live app state.
  */
 export function initializePlannerController(inventoryState, recipeState) {
-  const recommendationRunButton = document.getElementById('recommendation-run-button');
-  const recommendationStatus = document.getElementById('recommendation-status');
-  const recommendationOutput = document.getElementById('recommendation-output');
+  const recommendationRunButton = document.getElementById('recommendations-run-button') || document.getElementById('recommendation-run-button');
+  const recommendationStatus = document.getElementById('recommendations-status') || document.getElementById('recommendation-status');
+  const recommendationOutput = document.getElementById('recommendations-output') || document.getElementById('recommendation-output');
   const mealPlanGenerateButton = document.getElementById('meal-plan-generate-button');
   const mealPlanStatus = document.getElementById('meal-plan-status');
   const mealPlanOutput = document.getElementById('meal-plan-output');
   const mealPlanWeekStart = document.getElementById('meal-plan-week-start');
-  const shoppingGenerateButton = document.getElementById('shopping-generate-button');
-  const shoppingStatus = document.getElementById('shopping-status');
-  const shoppingOutput = document.getElementById('shopping-output');
+  const shoppingGenerateButton = document.getElementById('shopping-list-generate-button') || document.getElementById('shopping-generate-button');
+  const shoppingStatus = document.getElementById('shopping-list-status') || document.getElementById('shopping-status');
+  const shoppingOutput = document.getElementById('shopping-list-output') || document.getElementById('shopping-output');
 
-  const state = { rankedRecommendations: null, mealPlanEntries: [] };
+  const state = { rankedRecommendations: null, mealPlanEntries: [], onMealPlanUpdatedHandlers: [] };
   const getCurrentInventory = () => inventoryState.items;
   const getCurrentRecipes = () => recipeState.recipes;
+
+  /**
+   * Commit meal plan updates and notify persistence/sync subscribers.
+   * @param {Array<Record<string, any>>} entries
+   */
+  function commitMealPlanEntries(entries) {
+    state.mealPlanEntries = entries;
+    state.onMealPlanUpdatedHandlers.forEach((handler) => handler(state.mealPlanEntries));
+  }
 
   function runRecommendations() {
     state.rankedRecommendations = rankRecipeRecommendations(getCurrentRecipes(), getCurrentInventory());
@@ -51,7 +60,7 @@ export function initializePlannerController(inventoryState, recipeState) {
       try { rollingEntries = addMealPlanEntry(rollingEntries, plannedEntry); nextEntries.push(plannedEntry); } catch {}
     });
 
-    state.mealPlanEntries = nextEntries;
+    commitMealPlanEntries(nextEntries);
     mealPlanStatus.textContent = state.mealPlanEntries.length === 0 ? 'No meal-plan entries could be generated.' : `Generated ${state.mealPlanEntries.length} meal-plan entry(ies).`;
     renderMealPlan(); renderShopping();
   }
@@ -95,4 +104,23 @@ export function initializePlannerController(inventoryState, recipeState) {
   shoppingStatus.textContent = 'Generate a shopping list from the active plan.';
   mealPlanWeekStart.value = new Date().toISOString().slice(0, 10);
   renderAllPanels();
+
+  return {
+    get mealPlanEntries() { return state.mealPlanEntries; },
+    set onMealPlanUpdated(handler) { if (typeof handler === 'function') state.onMealPlanUpdatedHandlers.push(handler); },
+    /**
+     * Replace meal plan entries from persisted/synced state.
+     * @param {Array<Record<string, any>>} entries
+     */
+    replaceMealPlanEntries(entries) {
+      if (!Array.isArray(entries)) {
+        return;
+      }
+
+      commitMealPlanEntries(entries);
+      renderMealPlan();
+      renderShopping();
+      mealPlanStatus.textContent = 'Meal plan restored from persisted data.';
+    },
+  };
 }

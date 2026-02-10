@@ -6,6 +6,7 @@
  */
 const DEFAULT_SETTINGS = Object.freeze({
   general: {
+    theme: 'light',
     startPanel: 'inventory',
   },
   inventory: {
@@ -17,6 +18,30 @@ const DEFAULT_SETTINGS = Object.freeze({
     weekStart: '',
   },
 });
+
+/**
+ * Supported theme identifiers accepted by the settings payload.
+ * Keeping this central avoids accidental drift between form values and runtime checks.
+ */
+const THEME_OPTIONS = Object.freeze(new Set(['light', 'dark']));
+
+/**
+ * Apply the selected theme mode by writing a data attribute at the document root.
+ * @param {'light' | 'dark'} themeMode
+ */
+function applyTheme(themeMode) {
+  if (!document?.documentElement) return;
+  document.documentElement.dataset.theme = themeMode;
+}
+
+/**
+ * Resolve an incoming theme string to a supported option.
+ * @param {unknown} value
+ * @returns {'light' | 'dark'}
+ */
+function normalizeTheme(value) {
+  return typeof value === 'string' && THEME_OPTIONS.has(value) ? value : DEFAULT_SETTINGS.general.theme;
+}
 
 /**
  * Create the settings modal controller and wire preferences to existing UI inputs.
@@ -31,6 +56,7 @@ export function initializeSettingsController(options = {}) {
   const resetButton = document.getElementById('settings-reset-button');
 
   const fields = {
+    theme: document.getElementById('setting-theme'),
     startPanel: document.getElementById('setting-start-panel'),
     inventoryView: document.getElementById('setting-inventory-view'),
     inventorySort: document.getElementById('setting-inventory-sort'),
@@ -58,12 +84,13 @@ export function initializeSettingsController(options = {}) {
   /**
    * Merge incoming settings onto defaults so old payloads remain backward compatible.
    * @param {Record<string, any> | null | undefined} incoming
-   * @returns {{general: {startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}}}
+   * @returns {{general: {theme: 'light' | 'dark', startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}}}
    */
   function normalizeSettings(incoming) {
     const source = incoming && typeof incoming === 'object' ? incoming : {};
     return {
       general: {
+        theme: normalizeTheme(source.general?.theme),
         startPanel: source.general?.startPanel || DEFAULT_SETTINGS.general.startPanel,
       },
       inventory: {
@@ -81,6 +108,7 @@ export function initializeSettingsController(options = {}) {
    * Sync current in-memory settings into modal inputs.
    */
   function renderFormFromState() {
+    fields.theme.value = state.settings.general.theme;
     fields.startPanel.value = state.settings.general.startPanel;
     fields.inventoryView.value = state.settings.inventory.viewMode;
     fields.inventorySort.value = state.settings.inventory.sortOrder;
@@ -99,10 +127,13 @@ export function initializeSettingsController(options = {}) {
 
   /**
    * Apply settings to the existing workspace controls and navigation shell.
-   * @param {{general: {startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}}} nextSettings
+   * @param {{general: {theme: 'light' | 'dark', startPanel: string}, inventory: {viewMode: string, sortOrder: string, expandedColumns: boolean}, planner: {weekStart: string}}} nextSettings
    * @param {{navigateToStartPanel?: boolean}} [options]
    */
   function applySettings(nextSettings, options = {}) {
+    // Theme is applied first so visual updates happen immediately for the full app shell.
+    applyTheme(nextSettings.general.theme);
+
     linkedInputs.inventoryView.value = nextSettings.inventory.viewMode;
     emitInput(linkedInputs.inventoryView);
 
@@ -136,7 +167,10 @@ export function initializeSettingsController(options = {}) {
 
   function readFormSettings() {
     return normalizeSettings({
-      general: { startPanel: fields.startPanel.value },
+      general: {
+        theme: fields.theme.value,
+        startPanel: fields.startPanel.value,
+      },
       inventory: {
         viewMode: fields.inventoryView.value,
         sortOrder: fields.inventorySort.value,

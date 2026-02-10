@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   compareSyncEnvelopes,
   createSyncEnvelope,
+  GoogleDriveSyncClient,
   resolveSyncConflict,
   migrateSyncEnvelope,
 } from '../assets/js/platform/googleDriveSync.js';
@@ -45,6 +46,32 @@ test('sync conflict resolution keeps local snapshot when timestamps are within d
   const resolution = resolveSyncConflict(local, remote, { driftToleranceMs: 120000 });
   assert.equal(resolution.source, 'local');
   assert.deepEqual(resolution.state, { device: 'local' });
+});
+
+test('google drive sync client uses fetch with valid host context by default', async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    // Simulate host-method behavior where `this` must remain bound to global object.
+    globalThis.fetch = async function fakeFetch(url, init) {
+      if (this !== globalThis) {
+        throw new TypeError('Illegal invocation');
+      }
+
+      return {
+        ok: true,
+        async json() {
+          return { files: [] };
+        },
+      };
+    };
+
+    const client = new GoogleDriveSyncClient();
+    const fileId = await client.findSyncFileId('fake-token');
+    assert.equal(fileId, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('general retention archives stale active records and deletes old archived records', () => {

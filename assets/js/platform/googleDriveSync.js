@@ -186,7 +186,11 @@ export class GoogleDriveSyncClient {
    * @param {{fetchImpl?: typeof fetch, fileName?: string}} [options]
    */
   constructor(options = {}) {
-    this.fetchImpl = options.fetchImpl || fetch;
+    // NOTE:
+    // Some browser environments expose `window.fetch` as a host method that can throw
+    // "Illegal invocation" when detached from `window` and called later as a plain function.
+    // Wrapping through `globalThis.fetch(...)` guarantees the correct invocation context.
+    this.fetchImpl = options.fetchImpl || ((...args) => globalThis.fetch(...args));
     this.fileName = options.fileName || DEFAULT_SYNC_FILENAME;
   }
 

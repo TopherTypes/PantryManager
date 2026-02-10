@@ -31,7 +31,12 @@ const THEME_OPTIONS = Object.freeze(new Set(['light', 'dark']));
  */
 function applyTheme(themeMode) {
   if (!document?.documentElement) return;
+
+  // Mirror the theme marker to both `<html>` and `<body>` so CSS selectors and
+  // feature code can reliably detect the active mode in every browser context.
   document.documentElement.dataset.theme = themeMode;
+  document.body?.setAttribute('data-theme', themeMode);
+  document.body?.classList.toggle('theme-dark', themeMode === 'dark');
 }
 
 /**

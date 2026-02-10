@@ -36,7 +36,9 @@
   --shadow-md: 0 10px 30px rgba(18, 32, 50, 0.1);
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+body[data-theme='dark'],
+body.theme-dark {
   color-scheme: dark;
   --bg: #0f1723;
   --surface: #1a2535;

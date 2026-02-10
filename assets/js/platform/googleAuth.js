@@ -13,6 +13,12 @@ export function createGoogleAuthClient(config = GOOGLE_OAUTH_CONFIG) {
   let accessToken = null;
 
   /**
+   * Session cache key for OAuth response metadata.
+   * Session storage avoids persisting sensitive token data beyond browser session.
+   */
+  const SESSION_STORAGE_KEY = 'pantrymanager.google-auth';
+
+  /**
    * @returns {boolean}
    */
   function hasGoogleIdentityServices() {
@@ -29,6 +35,63 @@ export function createGoogleAuthClient(config = GOOGLE_OAUTH_CONFIG) {
 
     if (!hasGoogleIdentityServices()) {
       throw new Error('Google Identity Services library is unavailable. Confirm https://accounts.google.com/gsi/client is loaded.');
+    }
+  }
+
+  /**
+   * Persist token metadata for the current browser session.
+   * @param {{accessToken: string, expiresIn?: number}} metadata
+   */
+  function persistSessionToken(metadata) {
+    if (!globalThis.sessionStorage || !metadata?.accessToken) {
+      return;
+    }
+
+    const expiresInMs = Number(metadata.expiresIn || 0) * 1000;
+    const expiresAt = Number.isFinite(expiresInMs) && expiresInMs > 0
+      ? Date.now() + expiresInMs
+      : Date.now() + (45 * 60 * 1000);
+
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+      accessToken: metadata.accessToken,
+      expiresAt,
+    }));
+  }
+
+  /**
+   * Remove any cached token metadata from the browser session.
+   */
+  function clearPersistedSessionToken() {
+    globalThis.sessionStorage?.removeItem?.(SESSION_STORAGE_KEY);
+  }
+
+  /**
+   * Restore in-memory token from sessionStorage when still valid.
+   * @returns {boolean}
+   */
+  function restoreSessionToken() {
+    if (!globalThis.sessionStorage) {
+      return false;
+    }
+
+    try {
+      const rawPayload = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (!rawPayload) {
+        return false;
+      }
+
+      const parsedPayload = JSON.parse(rawPayload);
+      const isExpired = !parsedPayload?.expiresAt || Date.now() >= Number(parsedPayload.expiresAt);
+      if (isExpired || !parsedPayload?.accessToken) {
+        clearPersistedSessionToken();
+        return false;
+      }
+
+      accessToken = parsedPayload.accessToken;
+      return true;
+    } catch {
+      clearPersistedSessionToken();
+      return false;
     }
   }
 
@@ -57,6 +120,10 @@ export function createGoogleAuthClient(config = GOOGLE_OAUTH_CONFIG) {
           }
 
           accessToken = response.access_token;
+          persistSessionToken({
+            accessToken,
+            expiresIn: Number(response.expires_in || 0),
+          });
           resolve(accessToken);
         },
       });
@@ -78,7 +145,11 @@ export function createGoogleAuthClient(config = GOOGLE_OAUTH_CONFIG) {
     }
 
     accessToken = null;
+    clearPersistedSessionToken();
   }
+
+  // Hydrate token cache on startup so users remain connected across reloads.
+  restoreSessionToken();
 
   return {
     hasGoogleIdentityServices,

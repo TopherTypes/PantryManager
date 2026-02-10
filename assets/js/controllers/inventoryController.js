@@ -1,6 +1,16 @@
 import { getMissingRequiredNutritionFields, validateInventoryDraft } from '../domain/inventory.js';
 import { escapeHtml } from '../utils/dom.js';
 
+
+const CURRENCY_FORMAT_CONFIG = Object.freeze({
+  USD: { locale: 'en-US', currency: 'USD' },
+  EUR: { locale: 'de-DE', currency: 'EUR' },
+  GBP: { locale: 'en-GB', currency: 'GBP' },
+  CAD: { locale: 'en-CA', currency: 'CAD' },
+  AUD: { locale: 'en-AU', currency: 'AUD' },
+});
+
+
 /**
  * Initialize inventory workspace UI controller and expose state hooks.
  * @param {{showPanel?: (target: string) => void}} options
@@ -15,6 +25,7 @@ export function initializeInventoryController(options = {}) {
     selectedIds: new Set(),
     onItemsUpdatedHandlers: [],
     chips: new Set(),
+    currency: 'USD',
   };
 
   const tableBody = document.getElementById('inventory-table-body');
@@ -60,6 +71,10 @@ export function initializeInventoryController(options = {}) {
   };
 
   const createInventoryId = (name) => `item_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'item'}_${String(state.items.length + 1).padStart(3, '0')}`;
+  const formatCurrency = (value) => {
+    const formatterConfig = CURRENCY_FORMAT_CONFIG[state.currency] || CURRENCY_FORMAT_CONFIG.USD;
+    return new Intl.NumberFormat(formatterConfig.locale, { style: 'currency', currency: formatterConfig.currency, maximumFractionDigits: 2 }).format(value);
+  };
   const getDaysUntil = (dateString) => {
     if (!dateString) return Number.POSITIVE_INFINITY;
     const today = new Date();
@@ -242,7 +257,7 @@ export function initializeInventoryController(options = {}) {
     const totalValue = items.reduce((sum, item) => sum + (Number.isFinite(item.price) ? item.price : 0), 0);
     summaryExpiring.textContent = String(expiringSoon);
     summaryLowStock.textContent = String(lowStock);
-    summaryValue.textContent = `$${totalValue.toFixed(2)}`;
+    summaryValue.textContent = formatCurrency(totalValue);
     metaLine.textContent = `${state.items.length} items • ${state.items.filter((item) => getDaysUntil(item.expiryDate) <= 7).length} expiring soon`;
   }
 
@@ -408,6 +423,14 @@ export function initializeInventoryController(options = {}) {
   detailsCloseButton.addEventListener('click', () => {
     detailsDrawer.hidden = true;
   });
+  window.addEventListener('app:settings-updated', (event) => {
+    const selectedCurrency = event?.detail?.general?.currency;
+    if (typeof selectedCurrency === 'string' && CURRENCY_FORMAT_CONFIG[selectedCurrency]) {
+      state.currency = selectedCurrency;
+      renderWorkspace();
+    }
+  });
+
   detailsContent.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;

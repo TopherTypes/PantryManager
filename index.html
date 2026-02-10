@@ -34,6 +34,7 @@
           <button type="button" data-target="recommendations"><span>✨</span>Recommendations</button>
           <button type="button" data-target="meal-plan"><span>🗓</span>Meal Plan</button>
           <button type="button" data-target="shopping-list"><span>🛒</span>Shopping List</button>
+          <button type="button" data-target="reports"><span>📊</span>Reports</button>
           <button type="button" data-target="barcode"><span>🏷</span>Barcode</button>
           <button type="button" data-target="sync"><span>☁</span>Sync</button>
         </aside>
@@ -137,6 +138,28 @@
             <div class="card-grid"><article class="card" id="shopping-list-controls-panel"><h3>Shopping Controls</h3><div class="form-actions"><button type="button" id="shopping-list-generate-button">Generate Shopping List</button></div><p id="shopping-list-status" class="helper-text" aria-live="polite"></p></article><article class="card" id="shopping-list-output-panel"><h3>Grouped Shopping Output</h3><div id="shopping-list-output"></div></article></div>
           </section>
 
+          <section id="reports" class="panel" aria-labelledby="reports-heading">
+            <div class="panel-header"><h2 id="reports-heading">Reports</h2></div>
+            <p class="helper-text">Basic reporting snapshots for pantry value, planning activity, and nutrition target alignment.</p>
+            <div class="card-grid">
+              <article class="card">
+                <h3>Inventory Snapshot</h3>
+                <p id="reports-inventory-status" class="helper-text" aria-live="polite"></p>
+                <ul id="reports-inventory-metrics"></ul>
+              </article>
+              <article class="card">
+                <h3>Planning Snapshot</h3>
+                <p id="reports-planning-status" class="helper-text" aria-live="polite"></p>
+                <ul id="reports-planning-metrics"></ul>
+              </article>
+              <article class="card">
+                <h3>Nutrition Targets</h3>
+                <p id="reports-nutrition-status" class="helper-text" aria-live="polite"></p>
+                <ul id="reports-nutrition-metrics"></ul>
+              </article>
+            </div>
+          </section>
+
           <section id="barcode" class="panel" aria-labelledby="barcode-heading">
             <div class="panel-header"><h2 id="barcode-heading">Barcode Tools</h2></div>
             <div class="card-grid"><article class="card"><h3>Lookup</h3><label>Barcode value<input id="barcode-input" type="text" placeholder="Scan or type barcode" /></label><div class="form-actions barcode-actions"><button type="button" id="barcode-lookup-button">Lookup Barcode</button></div><div id="barcode-lookup-feedback" class="form-feedback" role="alert" aria-live="assertive"></div></article><article class="card" id="barcode-draft-container" hidden><h3>Canonical Draft Preview</h3><div id="barcode-draft-summary" class="barcode-draft-summary"></div><label class="checkbox-row"><input id="barcode-confirm-import" type="checkbox" />I confirm this draft should prefill the inventory form.</label><button type="button" id="barcode-apply-draft-button" disabled>Apply Confirmed Draft</button></article></div>
@@ -153,12 +176,13 @@
         <button type="button" data-target="inventory">Inventory</button>
         <button type="button" data-target="recipes">Recipes</button>
         <button type="button" data-target="meal-plan">Meal Plan</button>
-        <button type="button" data-target="shopping-list">Shopping</button>
+        <button type="button" data-target="reports">Reports</button>
         <button type="button" id="bottom-nav-more">More</button>
       </nav>
 
       <div id="mobile-more-menu" class="mobile-more-menu" hidden>
         <button type="button" data-target="recommendations">Recommendations</button>
+        <button type="button" data-target="shopping-list">Shopping</button>
         <button type="button" data-target="barcode">Barcode</button>
         <button type="button" data-target="sync">Sync</button>
       </div>
@@ -205,6 +229,16 @@
                   </select>
                 </label>
                 <label>
+                  Currency
+                  <select id="setting-currency" name="currency">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="AUD">AUD (A$)</option>
+                  </select>
+                </label>
+                <label>
                   Start screen
                   <select id="setting-start-panel" name="startPanel">
                     <option value="inventory">Inventory</option>
@@ -212,6 +246,7 @@
                     <option value="recommendations">Recommendations</option>
                     <option value="meal-plan">Meal Plan</option>
                     <option value="shopping-list">Shopping List</option>
+                    <option value="reports">Reports</option>
                     <option value="barcode">Barcode</option>
                     <option value="sync">Sync</option>
                   </select>
@@ -250,6 +285,28 @@
                 <label>
                   Meal plan week start
                   <input id="setting-meal-plan-week-start" name="mealPlanWeekStart" type="date" />
+                </label>
+              </div>
+            </section>
+
+            <section class="card">
+              <h4>Nutrition targets</h4>
+              <div class="form-grid">
+                <label>
+                  Daily calories
+                  <input id="setting-target-calories" name="targetCalories" type="number" min="0" step="1" placeholder="e.g. 2200" />
+                </label>
+                <label>
+                  Daily protein (g)
+                  <input id="setting-target-protein" name="targetProtein" type="number" min="0" step="0.1" placeholder="e.g. 150" />
+                </label>
+                <label>
+                  Daily carbs (g)
+                  <input id="setting-target-carbs" name="targetCarbs" type="number" min="0" step="0.1" placeholder="e.g. 250" />
+                </label>
+                <label>
+                  Daily fats (g)
+                  <input id="setting-target-fats" name="targetFats" type="number" min="0" step="0.1" placeholder="e.g. 70" />
                 </label>
               </div>
             </section>

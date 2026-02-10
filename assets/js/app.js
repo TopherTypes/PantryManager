@@ -4,6 +4,7 @@ import { initializeRecipeController } from './controllers/recipeController.js';
 import { initializePlannerController } from './controllers/plannerController.js';
 import { initializeSyncController } from './controllers/syncController.js';
 import { initializeSettingsController } from './controllers/settingsController.js';
+import { initializeReportsController } from './controllers/reportsController.js';
 
 /**
  * PantryManager bootstrap entrypoint.
@@ -85,5 +86,6 @@ import { initializeSettingsController } from './controllers/settingsController.j
   const recipeController = initializeRecipeController(inventoryController);
   const plannerController = initializePlannerController(inventoryController, recipeController);
   const settingsController = initializeSettingsController({ showPanel });
+  initializeReportsController(inventoryController, recipeController, plannerController, settingsController);
   initializeSyncController(inventoryController, recipeController, plannerController, settingsController);
 })();

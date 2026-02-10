@@ -248,15 +248,29 @@
 
         <section id="barcode" class="panel" aria-labelledby="barcode-heading">
           <h2 id="barcode-heading">Barcode Tools</h2>
-          <p>Scan known products quickly and query public data for unknown barcodes.</p>
+          <p>Local-first barcode lookup with provider fallback and explicit import confirmation.</p>
           <div class="card-grid">
-            <article class="card placeholder">
-              <h3>Scanner</h3>
-              <p>Placeholder for camera/scan workflow.</p>
+            <article class="card">
+              <h3>Lookup</h3>
+              <p class="helper-text">Hardware handles scanning; enter/paste a barcode to run the MVP workflow.</p>
+              <label>
+                Barcode value
+                <input id="barcode-input" type="text" placeholder="Scan or type barcode" />
+              </label>
+              <div class="form-actions barcode-actions">
+                <button type="button" id="barcode-lookup-button">Lookup Barcode</button>
+              </div>
+              <div id="barcode-lookup-feedback" class="form-feedback" role="alert" aria-live="assertive"></div>
             </article>
-            <article class="card placeholder">
-              <h3>External Lookup</h3>
-              <p>Placeholder for API status, import preview, and mapping controls.</p>
+            <article class="card" id="barcode-draft-container" hidden>
+              <h3>Canonical Draft Preview</h3>
+              <p class="helper-text">Review mapped fields before import. Save in inventory remains manual and explicit.</p>
+              <div id="barcode-draft-summary" class="barcode-draft-summary"></div>
+              <label class="checkbox-row">
+                <input id="barcode-confirm-import" type="checkbox" />
+                I confirm this draft should prefill the inventory form.
+              </label>
+              <button type="button" id="barcode-apply-draft-button" disabled>Apply Confirmed Draft</button>
             </article>
           </div>
         </section>

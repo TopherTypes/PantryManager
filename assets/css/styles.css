@@ -229,3 +229,16 @@ textarea {
   gap: 0.5rem;
   margin: var(--space-sm) 0;
 }
+
+
+.sync-status.is-success {
+  color: #166534;
+}
+
+.sync-status.is-warning {
+  color: #b45309;
+}
+
+.sync-status.is-info {
+  color: #1d4ed8;
+}

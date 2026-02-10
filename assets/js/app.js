@@ -2,6 +2,7 @@ import { initializeInventoryController } from './controllers/inventoryController
 import { initializeBarcodeController } from './controllers/barcodeController.js';
 import { initializeRecipeController } from './controllers/recipeController.js';
 import { initializePlannerController } from './controllers/plannerController.js';
+import { initializeSyncController } from './controllers/syncController.js';
 
 /**
  * PantryManager bootstrap entrypoint.
@@ -46,5 +47,8 @@ import { initializePlannerController } from './controllers/plannerController.js'
   const inventoryController = initializeInventoryController();
   initializeBarcodeController(inventoryController);
   const recipeController = initializeRecipeController(inventoryController);
-  initializePlannerController(inventoryController, recipeController);
+  const plannerController = initializePlannerController(inventoryController, recipeController);
+
+  // Sync orchestration is initialized last so it can hydrate/subscribe across controllers.
+  initializeSyncController(inventoryController, recipeController, plannerController);
 })();

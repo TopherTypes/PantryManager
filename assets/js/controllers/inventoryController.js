@@ -48,7 +48,14 @@ export function initializeInventoryController() {
   }
 
   const createInventoryId = (name) => `item_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'item'}_${String(state.items.length + 1).padStart(3, '0')}`;
-  const commitItemsUpdate = (nextItems) => { state.items = nextItems; state.onItemsUpdatedHandlers.forEach((handler) => handler(state.items)); };
+  /**
+   * Commit inventory updates and notify all registered listeners.
+   * @param {Array<Record<string, any>>} nextItems
+   */
+  const commitItemsUpdate = (nextItems) => {
+    state.items = nextItems;
+    state.onItemsUpdatedHandlers.forEach((handler) => handler(state.items));
+  };
 
   function prefillFormFromDraft(draft) {
     resetFormToCreateMode(false);
@@ -80,6 +87,19 @@ export function initializeInventoryController() {
   return {
     get items() { return state.items; },
     set onItemsUpdated(handler) { if (typeof handler === 'function') state.onItemsUpdatedHandlers.push(handler); },
+    /**
+     * Replace inventory state from a persistence or sync source.
+     * @param {Array<Record<string, any>>} items
+     */
+    replaceItems(items) {
+      if (!Array.isArray(items)) {
+        return;
+      }
+
+      commitItemsUpdate(items);
+      renderTable();
+      setFeedback(['Inventory restored from persisted data.'], 'info');
+    },
     getLocalMatchByBarcode(barcode) { return state.items.find((item) => item.barcode === barcode) || null; },
     prefillFormFromDraft,
     enterEditMode,

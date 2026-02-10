@@ -3,7 +3,7 @@ import { escapeHtml } from '../utils/dom.js';
 
 /** Initialize recipe CRUD controller. */
 export function initializeRecipeController(inventoryState) {
-  const state = { recipes: [], editingRecipeId: null, onRecipesUpdated: null };
+  const state = { recipes: [], editingRecipeId: null, onRecipesUpdatedHandlers: [] };
   const recipeTableBody = document.getElementById('recipe-table-body');
   const recipeSummary = document.getElementById('recipe-results-summary');
   const recipeFormFeedback = document.getElementById('recipe-form-feedback');
@@ -18,7 +18,14 @@ export function initializeRecipeController(inventoryState) {
   const ingredientsContainer = document.getElementById('ingredient-rows');
   const addIngredientButton = document.getElementById('recipe-add-ingredient');
 
-  const commitRecipesUpdate = (nextRecipes) => { state.recipes = nextRecipes; if (typeof state.onRecipesUpdated === 'function') state.onRecipesUpdated(state.recipes); };
+  /**
+   * Commit recipe updates and notify downstream listeners.
+   * @param {Array<Record<string, any>>} nextRecipes
+   */
+  const commitRecipesUpdate = (nextRecipes) => {
+    state.recipes = nextRecipes;
+    state.onRecipesUpdatedHandlers.forEach((handler) => handler(state.recipes));
+  };
   const setRecipeFeedback = (messages, level = 'error') => { if (!messages.length) { recipeFormFeedback.textContent = ''; recipeFormFeedback.className = 'form-feedback'; return; } recipeFormFeedback.innerHTML = `<ul>${messages.map((message) => `<li>${message}</li>`).join('')}</ul>`; recipeFormFeedback.className = `form-feedback is-${level}`; };
   const buildInventoryOptions = (selectedId = '') => `<option value="">Select inventory item</option>${inventoryState.items.map((item) => `<option value="${item.id}" ${item.id === selectedId ? 'selected' : ''}>${escapeHtml(item.name)} (${item.unit})</option>`).join('')}`;
 
@@ -68,5 +75,21 @@ export function initializeRecipeController(inventoryState) {
 
   inventoryState.onItemsUpdated = refreshIngredientOptions;
   resetRecipeForm(); renderRecipeTable();
-  return { get recipes() { return state.recipes; }, set onRecipesUpdated(handler) { state.onRecipesUpdated = handler; } };
+  return {
+    get recipes() { return state.recipes; },
+    set onRecipesUpdated(handler) { if (typeof handler === 'function') state.onRecipesUpdatedHandlers.push(handler); },
+    /**
+     * Replace recipe state from persisted/synced payloads.
+     * @param {Array<Record<string, any>>} recipes
+     */
+    replaceRecipes(recipes) {
+      if (!Array.isArray(recipes)) {
+        return;
+      }
+
+      commitRecipesUpdate(recipes);
+      renderRecipeTable();
+      setRecipeFeedback(['Recipes restored from persisted data.'], 'info');
+    },
+  };
 }

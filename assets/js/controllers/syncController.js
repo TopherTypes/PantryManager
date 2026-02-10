@@ -1,6 +1,7 @@
 import { createLocalStorageAdapter } from '../storage/localStorageAdapter.js';
 import { GoogleDriveSyncClient, createSyncEnvelope, migrateSyncEnvelope, resolveSyncConflict } from '../platform/googleDriveSync.js';
 import { runRetentionJobs } from '../platform/retentionPolicy.js';
+import { createGoogleAuthClient } from '../platform/googleAuth.js';
 
 const STORAGE_KEYS = {
   appState: 'app-state',
@@ -17,17 +18,58 @@ const STORAGE_KEYS = {
 export function initializeSyncController(inventoryController, recipeController, plannerController) {
   const storage = createLocalStorageAdapter('pantrymanager');
   const driveClient = new GoogleDriveSyncClient();
+  const googleAuth = createGoogleAuthClient();
 
   const saveLocalButton = document.getElementById('sync-save-local-button');
   const exportSyncButton = document.getElementById('sync-export-button');
+  const connectGoogleButton = document.getElementById('sync-google-connect-button');
+  const disconnectGoogleButton = document.getElementById('sync-google-disconnect-button');
+  const googleStatus = document.getElementById('sync-google-status');
   const importButton = document.getElementById('sync-import-button');
-  const tokenField = document.getElementById('sync-google-access-token');
   const importInput = document.getElementById('sync-import-input');
   const syncStatus = document.getElementById('sync-status');
 
   function setStatus(message, level = 'info') {
     syncStatus.textContent = message;
     syncStatus.className = `helper-text sync-status is-${level}`;
+  }
+
+  /**
+   * Update Google auth UI state so users can see whether cloud sync is connected.
+   */
+  function refreshGoogleAuthUi() {
+    const isConnected = googleAuth.hasAccessToken();
+    disconnectGoogleButton.disabled = !isConnected;
+    connectGoogleButton.disabled = !googleAuth.isConfigured() || !googleAuth.hasGoogleIdentityServices();
+
+    if (!googleAuth.isConfigured()) {
+      googleStatus.textContent = 'Google Sign-In is not configured yet. Add your OAuth client id marker in assets/js/platform/googleAuthConfig.js.';
+      return;
+    }
+
+    if (!googleAuth.hasGoogleIdentityServices()) {
+      googleStatus.textContent = 'Google Sign-In library has not loaded yet. Check connectivity and try again.';
+      return;
+    }
+
+    googleStatus.textContent = isConnected
+      ? 'Google Drive sync connected for this session.'
+      : 'Google Drive sync is disconnected. Click “Connect Google” before syncing.';
+  }
+
+  /**
+   * Ensure a valid OAuth token exists, requesting it interactively when needed.
+   *
+   * @returns {Promise<string>}
+   */
+  async function ensureAccessToken() {
+    if (googleAuth.hasAccessToken()) {
+      return googleAuth.getAccessToken();
+    }
+
+    const token = await googleAuth.requestAccessToken({ prompt: 'consent' });
+    refreshGoogleAuthUi();
+    return token;
   }
 
   function getOrCreateDeviceId() {
@@ -112,8 +154,6 @@ export function initializeSyncController(inventoryController, recipeController, 
   }
 
   async function triggerExportOrSync() {
-    const accessToken = tokenField.value.trim();
-
     try {
       const currentState = buildAppStateSnapshot();
       const { state: retainedState, report } = runRetentionJobs(currentState);
@@ -124,12 +164,15 @@ export function initializeSyncController(inventoryController, recipeController, 
 
       storage.set(STORAGE_KEYS.syncEnvelope, localEnvelope);
       storage.set(STORAGE_KEYS.appState, retainedState);
+      importInput.value = JSON.stringify(localEnvelope, null, 2);
 
-      if (!accessToken) {
-        setStatus(`Exported locally only (no access token). Cleanup removed ${Object.values(report).reduce((sum, count) => sum + count, 0)} stale record(s).`, 'info');
-        importInput.value = JSON.stringify(localEnvelope, null, 2);
+      // Keep export useful even before Google OAuth is configured.
+      if (!googleAuth.isConfigured() || !googleAuth.hasGoogleIdentityServices()) {
+        setStatus(`Exported locally only. Cleanup removed ${Object.values(report).reduce((sum, count) => sum + count, 0)} stale record(s). Configure Google Sign-In to enable Drive sync.`, 'info');
         return;
       }
+
+      const accessToken = await ensureAccessToken();
 
       const remoteEnvelope = await driveClient.downloadEnvelope(accessToken);
       const resolved = resolveSyncConflict(localEnvelope, remoteEnvelope, { driftToleranceMs: 120000 });
@@ -148,6 +191,21 @@ export function initializeSyncController(inventoryController, recipeController, 
     } catch (error) {
       setStatus(`Sync failed. Continuing in local-only mode (${error.message}).`, 'warning');
     }
+  }
+
+  async function triggerGoogleConnect() {
+    try {
+      await ensureAccessToken();
+      setStatus('Google authorization successful. You can now sync with Drive.', 'success');
+    } catch (error) {
+      setStatus(`Google authorization failed (${error.message}).`, 'warning');
+    }
+  }
+
+  async function triggerGoogleDisconnect() {
+    await googleAuth.signOut();
+    refreshGoogleAuthUi();
+    setStatus('Disconnected Google Drive sync for this session.', 'info');
   }
 
   function triggerImport() {
@@ -171,11 +229,14 @@ export function initializeSyncController(inventoryController, recipeController, 
   }
 
   saveLocalButton.addEventListener('click', triggerLocalSave);
+  connectGoogleButton.addEventListener('click', () => { void triggerGoogleConnect(); });
+  disconnectGoogleButton.addEventListener('click', () => { void triggerGoogleDisconnect(); });
   exportSyncButton.addEventListener('click', () => { void triggerExportOrSync(); });
   importButton.addEventListener('click', triggerImport);
 
   hydrateFromLocalStorage();
   connectAutoPersistence();
+  refreshGoogleAuthUi();
 
   return {
     saveLocally: triggerLocalSave,

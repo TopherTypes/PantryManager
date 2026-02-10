@@ -83,6 +83,21 @@ export function addMealPlanEntry(entries, nextEntry) {
   return [...entries, nextEntry];
 }
 
+
+/**
+ * Build a stable aggregation key for ingredient demand rows.
+ *
+ * Canonical unit policy:
+ * - The unit token is part of the identity to prevent implicit alias conversion.
+ * - `count` is canonical for count-family persisted values.
+ *
+ * @param {Record<string, any>} ingredient - Recipe ingredient row.
+ * @returns {string} Composite key for aggregation.
+ */
+function createDemandAggregationKey(ingredient) {
+  return `${ingredient.inventoryItemId}::${ingredient.unit}`;
+}
+
 /**
  * Aggregate ingredient demand for selected meal-plan entries.
  *
@@ -109,7 +124,7 @@ export function aggregateIngredientDemand(mealPlanEntries, recipes) {
     }
 
     recipe.ingredients.forEach((ingredient) => {
-      const aggregationKey = `${ingredient.inventoryItemId}::${ingredient.unit}`;
+      const aggregationKey = createDemandAggregationKey(ingredient);
       const scaledQuantity = ingredient.quantity * entry.portionMultiplier;
 
       if (!demandByIngredient.has(aggregationKey)) {

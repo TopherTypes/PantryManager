@@ -13,6 +13,9 @@ The following conventions are confirmed and form the canonical schema baseline:
    - Optional fields may be absent or `null`.
 2. **Units and nutrition basis**
    - Inventory and recipe quantities use unit-family-aware units (`mass`, `volume`, `count`).
+   - **Canonical count-unit strategy:** `count` is the only built-in count-family unit token.
+     Legacy aliases like `unit`, `item`, and `pcs` are treated as non-canonical and should be
+     migrated to `count` at write-time or import-time.
    - Units must already exist in the app dictionary, or a custom unit must be created with conversion relationships where feasible.
    - Nutrition values are normalized as **per 100g/ml equivalent** where applicable and represented using explicit `Per100` field names.
 3. **ID format**
@@ -168,3 +171,4 @@ The following conventions are confirmed and form the canonical schema baseline:
 7. Currency is app-global with default `GBP` (`£`).
 8. Decimal values are allowed for all numeric fields.
 9. Units must be pre-defined or explicitly created as custom units with conversion relationships where possible; barcode verification is not required.
+10. Built-in count-family quantities use `count` as the canonical persisted unit token.

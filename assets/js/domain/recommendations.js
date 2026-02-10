@@ -19,11 +19,9 @@ const UNIT_TO_BASE = Object.freeze({
   tbsp: { family: 'volume', baseUnit: 'ml', toBaseFactor: 14.78676478125 },
   cup: { family: 'volume', baseUnit: 'ml', toBaseFactor: 240 },
 
-  // Count family (base: count)
+  // Count family (base: count).
+  // Canonical strategy: built-in persistence uses `count` only.
   count: { family: 'count', baseUnit: 'count', toBaseFactor: 1 },
-  unit: { family: 'count', baseUnit: 'count', toBaseFactor: 1 },
-  item: { family: 'count', baseUnit: 'count', toBaseFactor: 1 },
-  pcs: { family: 'count', baseUnit: 'count', toBaseFactor: 1 },
 });
 
 const MATCH_STATUS = Object.freeze({
@@ -39,7 +37,7 @@ function normalizeToBase(quantity, unit) {
   if (!meta) {
     return {
       ok: false,
-      reason: `Unsupported unit: ${unit || '(empty)'}.`,
+      reason: `Unsupported unit: ${unit || '(empty)'}. Use canonical units (count for count-family values).`,
     };
   }
 

@@ -68,6 +68,23 @@ export const STORE_SECTION_TAXONOMY = Object.freeze({
   other: 'other',
 });
 
+
+/**
+ * Determine whether inventory and demand rows can be compared directly.
+ *
+ * Canonical unit policy:
+ * - We only compare quantities when the persisted unit tokens are identical.
+ * - This intentionally prevents implicit alias handling (for example `pcs` => `count`) so
+ *   non-canonical tokens cannot silently pass through shopping computations.
+ *
+ * @param {Record<string, any> | undefined} inventoryItem - Inventory source row.
+ * @param {Record<string, any>} demand - Aggregated demand row.
+ * @returns {boolean} True when quantities are directly comparable.
+ */
+function hasComparableUnit(inventoryItem, demand) {
+  return Boolean(inventoryItem && inventoryItem.unit === demand.unit);
+}
+
 const CATEGORY_TO_STORE_SECTION = Object.freeze({
   fruit: STORE_SECTION_TAXONOMY.produce,
   vegetable: STORE_SECTION_TAXONOMY.produce,
@@ -122,8 +139,9 @@ export function generateShoppingItems(ingredientDemand, inventoryItems) {
   return ingredientDemand
     .map((demand) => {
       const inventoryItem = inventoryById.get(demand.inventoryItemId);
-      const availableQuantity =
-        inventoryItem && inventoryItem.unit === demand.unit ? inventoryItem.quantity : 0;
+      const availableQuantity = hasComparableUnit(inventoryItem, demand)
+        ? inventoryItem.quantity
+        : 0;
 
       const requiredQuantity = roundShoppingQuantity(demand.requiredQuantity);
       const roundedAvailable = roundShoppingQuantity(availableQuantity);

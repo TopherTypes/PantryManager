@@ -30,5 +30,7 @@ export const REQUIRED_NUTRITION_FIELDS = Object.freeze([
 export const UNIT_FAMILIES = Object.freeze({
   mass: Object.freeze(['g', 'kg', 'oz', 'lb']),
   volume: Object.freeze(['ml', 'l', 'tsp', 'tbsp', 'cup']),
-  count: Object.freeze(['count', 'unit', 'item', 'pcs']),
+  // Canonical persisted count token for MVP. Legacy aliases are intentionally
+  // excluded so validators reject them unless explicitly registered as custom units.
+  count: Object.freeze(['count']),
 });

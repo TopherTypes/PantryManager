@@ -35,11 +35,13 @@ export function initializeBarcodeController(inventoryState) {
 
   async function runLookup() {
     const barcode = barcodeInput.value.trim(); setDraftVisibility(false);
-    if (!barcode) return setBarcodeFeedback(['Enter a barcode value before lookup.'], 'error');
+    lookupButton.disabled = true;
+    if (!barcode) { lookupButton.disabled = false; return setBarcodeFeedback(['Enter a barcode value before lookup.'], 'error'); }
 
     const localMatch = inventoryState.getLocalMatchByBarcode(barcode);
     if (localMatch) {
       renderDraft({ barcode: localMatch.barcode || barcode, name: localMatch.name, brand: null, quantity: localMatch.quantity, unit: localMatch.unit, category: localMatch.category, nutrition: { ...localMatch.nutrition } }, 'Local inventory');
+      lookupButton.disabled = false;
       return setBarcodeFeedback([`Local match found for barcode ${barcode}.`, 'Review the draft and explicitly confirm before prefill.'], 'success');
     }
 
@@ -47,11 +49,13 @@ export function initializeBarcodeController(inventoryState) {
     const result = await lookupWithRetry(barcode);
     if (result.ok && result.draft) {
       renderDraft(result.draft, 'Open Food Facts');
+      lookupButton.disabled = false;
       return setBarcodeFeedback(['Provider draft loaded successfully.', 'Explicit confirmation is required before this draft can prefill the inventory form.'], 'success');
     }
 
     const error = result.error;
     const manualFallbackMessage = error?.kind === 'rate_limit' ? 'Provider rate limit reached. Please continue with manual entry.' : error?.kind === 'not_found' ? 'No provider match found. Please continue with manual entry.' : error?.kind === 'malformed' ? 'Provider payload was malformed and discarded. Please continue with manual entry.' : error?.kind === 'offline' ? 'You are offline. External lookup skipped; continue with manual entry.' : 'Lookup temporarily failed after retries. Please continue with manual entry.';
+    lookupButton.disabled = false;
     setBarcodeFeedback([manualFallbackMessage], 'info');
   }
 

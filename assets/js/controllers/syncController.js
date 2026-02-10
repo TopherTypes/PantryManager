@@ -28,10 +28,15 @@ export function initializeSyncController(inventoryController, recipeController, 
   const importButton = document.getElementById('sync-import-button');
   const importInput = document.getElementById('sync-import-input');
   const syncStatus = document.getElementById('sync-status');
+  const globalSyncStatus = document.getElementById('global-sync-status');
 
   function setStatus(message, level = 'info') {
     syncStatus.textContent = message;
     syncStatus.className = `helper-text sync-status is-${level}`;
+    if (globalSyncStatus) {
+      globalSyncStatus.textContent = level === 'success' ? 'Synced' : level === 'warning' ? 'Sync warning' : 'Local mode';
+    }
+    window.dispatchEvent(new CustomEvent('app:toast', { detail: { message } }));
   }
 
   /**

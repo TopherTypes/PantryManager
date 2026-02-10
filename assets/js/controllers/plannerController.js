@@ -32,17 +32,24 @@ export function initializePlannerController(inventoryState, recipeState) {
   }
 
   function runRecommendations() {
+    recommendationRunButton.disabled = true;
+    recommendationStatus.textContent = 'Generating recommendations...';
     state.rankedRecommendations = rankRecipeRecommendations(getCurrentRecipes(), getCurrentInventory());
     const recommendationCount = state.rankedRecommendations.allRanked.length;
     recommendationStatus.textContent = recommendationCount === 0 ? 'No recommendation candidates available. Add recipes to continue.' : `Generated ${recommendationCount} ranked recommendation(s).`;
+    recommendationRunButton.disabled = false;
+    window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: 'Recommendations updated.' } }));
     renderRecommendations();
   }
 
   function generateMealPlanEntries() {
+    mealPlanGenerateButton.disabled = true;
+    mealPlanStatus.textContent = 'Generating meal plan...';
     if (!state.rankedRecommendations || state.rankedRecommendations.allRanked.length === 0) {
       mealPlanStatus.textContent = 'No recommendations available. Run recommendation generation first.';
       renderMealPlan();
       renderShopping();
+      mealPlanGenerateButton.disabled = false;
       return;
     }
 
@@ -62,6 +69,8 @@ export function initializePlannerController(inventoryState, recipeState) {
 
     commitMealPlanEntries(nextEntries);
     mealPlanStatus.textContent = state.mealPlanEntries.length === 0 ? 'No meal-plan entries could be generated.' : `Generated ${state.mealPlanEntries.length} meal-plan entry(ies).`;
+    mealPlanGenerateButton.disabled = false;
+    window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: 'Meal plan generated.' } }));
     renderMealPlan(); renderShopping();
   }
 
@@ -95,7 +104,7 @@ export function initializePlannerController(inventoryState, recipeState) {
 
   recommendationRunButton.addEventListener('click', runRecommendations);
   mealPlanGenerateButton.addEventListener('click', generateMealPlanEntries);
-  shoppingGenerateButton.addEventListener('click', () => { if (!state.mealPlanEntries.length) { shoppingStatus.textContent = 'No meal plan entries found. Generate a weekly plan first.'; return renderShopping(); } shoppingStatus.textContent = 'Shopping list refreshed from active plan.'; renderShopping(); });
+  shoppingGenerateButton.addEventListener('click', () => { if (!state.mealPlanEntries.length) { shoppingStatus.textContent = 'No meal plan entries found. Generate a weekly plan first.'; return renderShopping(); } shoppingStatus.textContent = 'Shopping list refreshed from active plan.'; renderShopping(); window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: 'Shopping list refreshed.' } })); });
   inventoryState.onItemsUpdated = () => (state.rankedRecommendations ? runRecommendations() : renderAllPanels());
   recipeState.onRecipesUpdated = () => (state.rankedRecommendations ? runRecommendations() : renderAllPanels());
 

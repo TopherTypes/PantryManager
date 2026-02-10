@@ -160,14 +160,61 @@
         <section id="recipes" class="panel" aria-labelledby="recipes-heading">
           <h2 id="recipes-heading">Recipes</h2>
           <p>Store recipes and map ingredient requirements per serving.</p>
-          <div class="card-grid">
-            <article class="card placeholder">
+
+          <div class="card-grid inventory-grid">
+            <article class="card">
               <h3>Recipe Library</h3>
-              <p>Placeholder for recipe cards and filters.</p>
+              <p id="recipe-results-summary" class="helper-text" aria-live="polite"></p>
+              <div class="table-wrap">
+                <table class="inventory-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Servings</th>
+                      <th>Ingredients (with normalization)</th>
+                      <th>Preparation Notes</th>
+                      <th>Recipe ID</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recipe-table-body"></tbody>
+                </table>
+              </div>
             </article>
-            <article class="card placeholder">
-              <h3>Recipe Editor</h3>
-              <p>Placeholder for recipe details, ingredients, and instructions.</p>
+
+            <article class="card">
+              <h3 id="recipe-form-heading">Add Recipe</h3>
+              <p class="helper-text">Ingredient rows must reference inventory items (MVP rule). Servings must be at least 1.</p>
+              <div id="recipe-form-feedback" class="form-feedback" role="alert" aria-live="assertive"></div>
+              <form id="recipe-form" novalidate>
+                <input type="hidden" id="recipe-id" />
+                <div class="form-grid">
+                  <label>
+                    Recipe name *
+                    <input id="recipe-name" type="text" maxlength="120" required />
+                  </label>
+                  <label>
+                    Servings *
+                    <input id="recipe-servings" type="number" min="1" step="1" required />
+                  </label>
+                </div>
+
+                <fieldset class="nutrition-fieldset">
+                  <legend>Ingredients * (inventory-linked only)</legend>
+                  <div id="ingredient-rows" class="ingredient-rows"></div>
+                  <button type="button" id="recipe-add-ingredient" class="button-muted">Add Ingredient Row</button>
+                </fieldset>
+
+                <label>
+                  Preparation notes (optional)
+                  <textarea id="recipe-preparation-notes" rows="4" placeholder="Optional preparation notes for this recipe."></textarea>
+                </label>
+
+                <div class="form-actions">
+                  <button type="submit" id="recipe-submit">Add Recipe</button>
+                  <button type="button" id="recipe-cancel-edit" class="button-muted">Cancel Edit</button>
+                </div>
+              </form>
             </article>
           </div>
         </section>

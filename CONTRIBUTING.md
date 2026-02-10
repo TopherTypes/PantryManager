@@ -65,9 +65,19 @@ Commit rules:
    python3 -m http.server 8080
    ```
 
-4. Verify changed behavior and scan for regressions.
-5. Ensure only intended files are modified.
-6. Commit using the commit policy above.
+4. Run QA checks (or document why a check could not run):
+
+   ```bash
+   npm run qa:smoke
+   npm run qa:browser-baseline
+   npm run qa:a11y
+   npm run qa:docs
+   npm test
+   ```
+
+5. Verify changed behavior and scan for regressions.
+6. Ensure only intended files are modified.
+7. Commit using the commit policy above.
 
 ## 5) Pull request structure (required)
 
@@ -126,3 +136,21 @@ When Codex performs repository work, it should:
 3. Include reproducible validation commands in PR/testing notes.
 4. Flag conflicts between new changes and existing documentation statements.
 5. Avoid introducing process ambiguity; prefer explicit rules.
+
+
+## 10) MVP release checklist ownership
+
+Before merging a release-oriented PR, confirm checklist alignment with MVP capabilities:
+
+1. Inventory management checks complete.
+2. Recipe management checks complete.
+3. Recommendation engine checks complete.
+4. Weekly meal planning checks complete.
+5. Shopping list generation checks complete.
+6. Barcode-assisted update checks complete.
+7. Google Drive sync/import/export checks complete.
+8. Retention-policy job checks complete.
+9. QA gate checks (smoke + browser baseline + accessibility + docs verification) complete.
+10. P0/P1 defects closed or explicitly owner-approved.
+
+Record checklist evidence in the PR under **Validation** and **Documentation updates**.

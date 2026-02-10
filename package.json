@@ -1,0 +1,12 @@
+{
+  "name": "pantrymanager",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "qa:smoke": "bash scripts/qa/smoke-checks.sh",
+    "qa:browser-baseline": "bash scripts/qa/browser-baseline-check.sh",
+    "qa:a11y": "node scripts/qa/a11y-check.mjs",
+    "qa:docs": "bash scripts/qa/doc-update-check.sh"
+  }
+}

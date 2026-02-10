@@ -132,3 +132,29 @@ Every change that impacts behavior, scope, or architecture must satisfy:
 3. Record accessibility checks against WCAG 2.1 AA or 2.2 AA for touched user journeys.
 4. Treat unresolved P0/P1 defects as release blockers unless explicitly accepted by owner sign-off.
 5. Include documentation-update verification in every PR.
+
+
+## 7) Implemented contribution workflow and CI checks
+
+The following checks are now wired into repository workflow where possible:
+
+1. **Smoke checks**
+   - Script: `scripts/qa/smoke-checks.sh`
+   - CI command: `npm run qa:smoke`
+2. **Browser coverage baseline check**
+   - Script: `scripts/qa/browser-baseline-check.sh`
+   - CI command: `npm run qa:browser-baseline`
+   - Enforces documented support target: Chrome + Edge.
+3. **Accessibility baseline check (static guardrail)**
+   - Script: `scripts/qa/a11y-check.mjs`
+   - CI command: `npm run qa:a11y`
+   - Validates foundational semantic markers pending full WCAG audit automation.
+4. **Documentation update verification**
+   - Script: `scripts/qa/doc-update-check.sh`
+   - CI command: `npm run qa:docs`
+   - Fails when architecture/product/ADR updates are made without top-level contributor docs updates.
+5. **Automated tests**
+   - CI command: `npm test`
+   - Includes retention and sync policy unit tests.
+
+Checks are executed in GitHub Actions workflow `.github/workflows/qa.yml` on push to `main` and pull requests.

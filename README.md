@@ -19,7 +19,7 @@ PantryManager is a GitHub Pages-hosted HTML web app for managing kitchen invento
 
 - **Hosting**: GitHub Pages
 - **Frontend**: Semantic HTML, CSS, and vanilla JavaScript
-- **Data persistence (candidate)**: Browser local storage (short-term), optional future cloud sync
+- **Data persistence**: Local-first browser storage with Google Drive-backed import/export/sync for single-user continuity
 - **Barcode integration**: Open Food Facts product lookup API + hardware-provided barcode scanning
 
 ## Repository structure
@@ -90,11 +90,53 @@ PantryManager uses a **barcode product lookup adapter** contract with Open Food 
   - Existing data privacy/logging constraints remain in effect for outbound lookups.
 
 
+
+## Google Drive sync + retention platform services (MVP)
+
+Platform-level MVP services now include:
+
+- **Google Drive-backed sync/import/export path** (`assets/js/platform/googleDriveSync.js`)
+  - Uses Drive `appDataFolder` for private per-user snapshot storage.
+  - Applies deterministic conflict resolution with clock-drift tolerance.
+  - Includes schema migration helper for backward-compatible payload imports.
+- **Retention jobs and policies** (`assets/js/platform/retentionPolicy.js`)
+  - Archives non-pricing entities after 30 days.
+  - Deletes archived entities after a 30-day archive window.
+  - Retains pricing history for 12 months before deletion.
+
+These services are currently implemented as reusable domain/platform modules and can be wired to UI workflows incrementally.
+
 ## Quality and verification
 
 Quality expectations, feature-level acceptance criteria, and verification coverage are defined in `docs/quality/test-strategy.md`.
 
 This file captures confirmed MVP quality gates, feature-level acceptance criteria, and documentation verification checks.
+
+
+## MVP release checklist
+
+Use this checklist before shipping an MVP release candidate:
+
+1. **Inventory management**
+   - CRUD and validation smoke checks pass.
+2. **Recipe management**
+   - Recipe CRUD, ingredient validation, and inventory links smoke checks pass.
+3. **Recommendation engine**
+   - Full/partial match and expiry-priority ranking behavior verified.
+4. **Weekly meal planning**
+   - Slot assignment and portion scaling checks pass.
+5. **Shopping list generation**
+   - Deficit math, grouping, and meal-plan traceability checks pass.
+6. **Barcode-assisted updates**
+   - Local-first lookup, provider fallback, retries, and confirmation flow verified.
+7. **Google Drive sync/import/export**
+   - Export, import, and conflict-resolution path validated with deterministic outcomes.
+8. **Retention policies and jobs**
+   - 30-day archive/delete policy and 12-month pricing retention verified on fixture data.
+9. **Quality gates**
+   - Smoke checks, Chrome/Edge support baseline, accessibility baseline checks, and documentation-update verification all pass.
+10. **Defect policy**
+   - P0/P1 defects are closed or explicitly accepted by owner sign-off.
 
 ## Contributing
 

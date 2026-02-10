@@ -14,6 +14,9 @@ Define an initial architecture direction for PantryManager as a static web app h
    - Local storage or IndexedDB for local-first persistence.
 4. **Integration adapters** (public APIs)
    - Barcode lookup and optional nutritional enrichment.
+5. **Platform services** (sync + lifecycle)
+   - Google Drive sync/import/export client with conflict resolution and payload migration.
+   - Retention-policy job engine for archival/deletion windows.
 
 ## Data flow (initial)
 
@@ -21,6 +24,25 @@ Define an initial architecture direction for PantryManager as a static web app h
 - State changes are persisted to browser storage.
 - Recommendation and planning engines derive computed views from core entities.
 - External barcode lookups are called only when needed and then mapped into internal models.
+
+
+## Sync and lifecycle policy implementation notes
+
+### Google Drive sync/import/export path
+
+- The MVP sync path writes a single envelope into Google Drive `appDataFolder` scoped to the single user.
+- Sync records store `exportedAtUtc` in ISO UTC to avoid local-time-zone ordering ambiguity.
+- Conflict resolution compares local and remote snapshots using a drift tolerance window.
+  - If timestamps are effectively equal (within tolerance), local state wins deterministic tie-break.
+  - If one snapshot is clearly newer, newest snapshot wins.
+- Payload migration is versioned to handle older envelope formats during import.
+
+### Retention jobs and windows
+
+- Non-pricing data is archived after 30 days of inactivity.
+- Archived non-pricing data is deleted after a 30-day archive window.
+- Pricing history is retained for 12 months, then deleted.
+- Retention job comparisons normalize date-only values to UTC midnight to reduce time-zone drift.
 
 ## Non-functional priorities
 

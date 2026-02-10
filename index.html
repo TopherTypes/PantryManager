@@ -19,20 +19,26 @@
       incremental conversion into production-grade components.
     -->
     <div class="app-shell">
-      <header class="app-header">
-        <h1>PantryManager</h1>
-        <p class="tagline">Kitchen inventory, recipes, meal plans, and smart shopping support.</p>
-      </header>
+      <!--
+        The top bar keeps key identity and navigation controls in one place.
+        This creates a cleaner, product-like shell while preserving semantic landmarks.
+      -->
+      <header class="app-topbar">
+        <div class="app-header">
+          <h1>PantryManager</h1>
+          <p class="tagline">Kitchen inventory, recipes, meal plans, and smart shopping support.</p>
+        </div>
 
-      <nav class="app-nav" aria-label="Primary">
-        <button type="button" data-target="inventory">Inventory</button>
-        <button type="button" data-target="recipes">Recipes</button>
-        <button type="button" data-target="recommendations">Recommendations</button>
-        <button type="button" data-target="meal-plan">Meal Plan</button>
-        <button type="button" data-target="shopping-list">Shopping List</button>
-        <button type="button" data-target="barcode">Barcode</button>
-        <button type="button" data-target="sync">Sync</button>
-      </nav>
+        <nav class="app-nav" aria-label="Primary">
+          <button type="button" data-target="inventory">Inventory</button>
+          <button type="button" data-target="recipes">Recipes</button>
+          <button type="button" data-target="recommendations">Recommendations</button>
+          <button type="button" data-target="meal-plan">Meal Plan</button>
+          <button type="button" data-target="shopping-list">Shopping List</button>
+          <button type="button" data-target="barcode">Barcode</button>
+          <button type="button" data-target="sync">Sync</button>
+        </nav>
+      </header>
 
       <main class="app-main">
         <section id="inventory" class="panel is-active" aria-labelledby="inventory-heading">

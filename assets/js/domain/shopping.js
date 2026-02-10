@@ -1,3 +1,10 @@
+/**
+ * Usage:
+ * - Use `generateShoppingItems` to derive shortages from aggregated demand and
+ *   current inventory snapshots.
+ * - Use `groupShoppingItemsByStoreSection` for presentation-layer grouping while
+ *   preserving domain-owned section mapping rules.
+ */
 import {
   combineValidationResults,
   validateId,

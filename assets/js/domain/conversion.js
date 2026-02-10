@@ -1,4 +1,11 @@
 /**
+ * Usage:
+ * - Import `normalizeToFamilyBase` when recipe or inventory workflows require
+ *   deterministic unit-family normalization.
+ * - Import `getUnitMeta` or `allowedUnits` for UI-level checks that should
+ *   stay aligned with canonical domain conversion rules.
+ */
+/**
  * Shared unit conversion utility.
  *
  * Assumptions documented explicitly for MVP:
@@ -17,10 +24,21 @@ const UNIT_MAP = Object.freeze({
 
 export const allowedUnits = new Set(Object.keys(UNIT_MAP));
 
+/**
+ * Retrieve conversion metadata for a canonical unit token.
+ * @param {string} unit - Canonical unit token.
+ * @returns {{family: string, toBaseFactor: number, baseUnit: string} | null} Unit metadata or null.
+ */
 export function getUnitMeta(unit) {
   return UNIT_MAP[unit] || null;
 }
 
+/**
+ * Convert a quantity into its unit-family base representation.
+ * @param {number} quantity - Quantity to normalize.
+ * @param {string} unit - Source unit token.
+ * @returns {{ok: false, reason: string} | {ok: true, quantity: number, family: string, baseUnit: string}} Conversion result.
+ */
 export function normalizeToFamilyBase(quantity, unit) {
   const meta = getUnitMeta(unit);
   if (!meta) {

@@ -1,4 +1,10 @@
 /**
+ * Usage:
+ * - Use `runRetentionJobs` as the orchestration entrypoint for scheduled
+ *   retention processing.
+ * - Use lower-level retention functions only for targeted testing scenarios.
+ */
+/**
  * Retention policy engine for MVP lifecycle requirements.
  *
  * Policy (from clarifications Q8 / ADR 0002):

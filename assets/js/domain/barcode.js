@@ -1,3 +1,9 @@
+/**
+ * Usage:
+ * - Use `createOpenFoodFactsAdapter` when wiring barcode scans to inventory
+ *   drafts and nutrition extraction workflows.
+ * - Keep API parsing in this module so controller code stays transport-agnostic.
+ */
 import { parseAndNormalizeQuantityText } from './inventory.js';
 
 /**

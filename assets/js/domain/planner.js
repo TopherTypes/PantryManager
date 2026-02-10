@@ -1,3 +1,9 @@
+/**
+ * Usage:
+ * - Use `validateMealPlanEntry` before persisting entries from UI controllers.
+ * - Use `aggregateIngredientDemand` and `selectMealPlanEntriesForWeek` to build
+ *   shopping inputs from weekly plan windows.
+ */
 import {
   combineValidationResults,
   validateDate,

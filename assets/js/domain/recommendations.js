@@ -1,4 +1,10 @@
 /**
+ * Usage:
+ * - Use `rankRecipeRecommendations` as the top-level recommendation entrypoint.
+ * - Use `evaluateRecipeRecommendation` when callers need per-recipe reasoning
+ *   details for UI explainability or debugging.
+ */
+/**
  * Recommendations domain service.
  *
  * Evaluates recipe satisfiability from pantry inventory using unit-family conversion,

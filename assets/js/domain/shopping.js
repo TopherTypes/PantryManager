@@ -49,3 +49,126 @@ export function normalizeShoppingItem(item) {
     missingQuantity: computeMissingQuantity(item.requiredQuantity, item.availableQuantity),
   };
 }
+
+/**
+ * Generic section taxonomy used to group shopping output.
+ *
+ * This intentionally remains retailer-agnostic for MVP while still enabling
+ * practical in-store ordering.
+ */
+export const STORE_SECTION_TAXONOMY = Object.freeze({
+  produce: 'produce',
+  dairyAndFridge: 'dairy-and-fridge',
+  meatAndSeafood: 'meat-and-seafood',
+  bakery: 'bakery',
+  frozen: 'frozen',
+  pantry: 'pantry',
+  beverages: 'beverages',
+  household: 'household',
+  other: 'other',
+});
+
+const CATEGORY_TO_STORE_SECTION = Object.freeze({
+  fruit: STORE_SECTION_TAXONOMY.produce,
+  vegetable: STORE_SECTION_TAXONOMY.produce,
+  produce: STORE_SECTION_TAXONOMY.produce,
+  dairy: STORE_SECTION_TAXONOMY.dairyAndFridge,
+  fridge: STORE_SECTION_TAXONOMY.dairyAndFridge,
+  meat: STORE_SECTION_TAXONOMY.meatAndSeafood,
+  seafood: STORE_SECTION_TAXONOMY.meatAndSeafood,
+  bakery: STORE_SECTION_TAXONOMY.bakery,
+  frozen: STORE_SECTION_TAXONOMY.frozen,
+  baking: STORE_SECTION_TAXONOMY.pantry,
+  grain: STORE_SECTION_TAXONOMY.pantry,
+  canned: STORE_SECTION_TAXONOMY.pantry,
+  spice: STORE_SECTION_TAXONOMY.pantry,
+  oil: STORE_SECTION_TAXONOMY.pantry,
+  beverage: STORE_SECTION_TAXONOMY.beverages,
+  drinks: STORE_SECTION_TAXONOMY.beverages,
+  cleaning: STORE_SECTION_TAXONOMY.household,
+});
+
+/**
+ * Quantity rounding for shopping list output.
+ *
+ * Rounding policy mirrors planner math:
+ * - Keep computation in raw precision.
+ * - Round emitted values to 3 decimals for deterministic UX and snapshots.
+ *
+ * @param {number} value - Numeric quantity to round.
+ * @returns {number} Rounded quantity value.
+ */
+function roundShoppingQuantity(value) {
+  return Number(value.toFixed(3));
+}
+
+/**
+ * Build shopping items from aggregated demand and current inventory.
+ *
+ * Comparison rules:
+ * - Required quantity comes from already-aggregated planner demand.
+ * - Available quantity is matched by inventory item ID.
+ * - If inventory unit differs from demand unit, available is treated as 0 because
+ *   conversion policy is outside this module's scope.
+ * - Missing quantity is derived with `max(required - available, 0)`.
+ *
+ * @param {Record<string, any>[]} ingredientDemand - Aggregated demand rows.
+ * @param {Record<string, any>[]} inventoryItems - Current inventory items.
+ * @returns {Record<string, any>[]} Shopping items requiring purchase.
+ */
+export function generateShoppingItems(ingredientDemand, inventoryItems) {
+  const inventoryById = new Map(inventoryItems.map((item) => [item.id, item]));
+
+  return ingredientDemand
+    .map((demand) => {
+      const inventoryItem = inventoryById.get(demand.inventoryItemId);
+      const availableQuantity =
+        inventoryItem && inventoryItem.unit === demand.unit ? inventoryItem.quantity : 0;
+
+      const requiredQuantity = roundShoppingQuantity(demand.requiredQuantity);
+      const roundedAvailable = roundShoppingQuantity(availableQuantity);
+      const missingQuantity = roundShoppingQuantity(
+        computeMissingQuantity(requiredQuantity, roundedAvailable)
+      );
+
+      return {
+        id: `shop_${demand.inventoryItemId}_${demand.unit}`,
+        ingredientName: inventoryItem?.name ?? demand.inventoryItemId,
+        inventoryItemId: demand.inventoryItemId,
+        requiredQuantity,
+        availableQuantity: roundedAvailable,
+        missingQuantity,
+        unit: demand.unit,
+        storeSection: resolveStoreSection(inventoryItem),
+        sourceMealPlanEntryIds: demand.sourceMealPlanEntryIds,
+      };
+    })
+    .filter((item) => item.missingQuantity > 0);
+}
+
+/**
+ * Group shopping items by store section.
+ * @param {Record<string, any>[]} shoppingItems - Flat shopping list.
+ * @returns {Record<string, Record<string, any>[]>} Items keyed by store section.
+ */
+export function groupShoppingItemsByStoreSection(shoppingItems) {
+  return shoppingItems.reduce((groups, item) => {
+    const section = item.storeSection || STORE_SECTION_TAXONOMY.other;
+    if (!groups[section]) {
+      groups[section] = [];
+    }
+
+    groups[section].push(item);
+    return groups;
+  }, {});
+}
+
+/**
+ * Resolve a store section from known inventory metadata.
+ * @param {Record<string, any> | undefined} inventoryItem - Source inventory item.
+ * @returns {string} Store section taxonomy value.
+ */
+export function resolveStoreSection(inventoryItem) {
+  const normalizedCategory = inventoryItem?.category?.toLowerCase?.() || '';
+  return CATEGORY_TO_STORE_SECTION[normalizedCategory] || STORE_SECTION_TAXONOMY.other;
+}

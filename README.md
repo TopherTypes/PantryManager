@@ -99,6 +99,10 @@ Platform-level MVP services now include:
   - Uses Drive `appDataFolder` for private per-user snapshot storage.
   - Applies deterministic conflict resolution with clock-drift tolerance.
   - Includes schema migration helper for backward-compatible payload imports.
+- **Google OAuth popup sign-in wrapper** (`assets/js/platform/googleAuth.js`)
+  - Replaces manual token copy/paste with in-app Google authorization.
+  - Uses config markers in `assets/js/platform/googleAuthConfig.js` for the OAuth Web Client ID.
+  - Keeps cloud sync optional: local export/import still works when OAuth is not configured.
 - **Retention jobs and policies** (`assets/js/platform/retentionPolicy.js`)
   - Archives non-pricing entities after 30 days.
   - Deletes archived entities after a 30-day archive window.
